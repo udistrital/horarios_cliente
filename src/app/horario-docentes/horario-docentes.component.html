@@ -1,0 +1,41 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Horario por Docente</mat-card-title>
+    <mat-card-subtitle>Clases asignadas a cada docente por franja horaria</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="loading" style="text-align:center;padding:32px">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+
+    <div *ngIf="!loading" style="overflow-x:auto">
+      <table mat-table [dataSource]="teacherRows" class="schedule-table">
+
+        <ng-container matColumnDef="teacher">
+          <th mat-header-cell *matHeaderCellDef>Docente</th>
+          <td mat-cell *matCellDef="let row"><strong>{{ row.teacher }}</strong></td>
+        </ng-container>
+
+        <ng-container *ngFor="let ts of timeslots" [matColumnDef]="slotKey(ts)">
+          <th mat-header-cell *matHeaderCellDef class="slot-header">
+            <div>{{ ts.dayOfWeek | slice:0:3 }}</div>
+            <div class="time-label">{{ ts.startTime }} - {{ ts.endTime }}</div>
+          </th>
+          <td mat-cell *matCellDef="let row">
+            <ng-container *ngIf="row.slots[slotKey(ts)] as lesson; else emptyCell">
+              <div class="lesson-cell">
+                <span class="subject">{{ lesson.subject }}</span>
+                <span class="room">{{ lesson.room?.name }}</span>
+              </div>
+            </ng-container>
+            <ng-template #emptyCell><span class="empty-cell">—</span></ng-template>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

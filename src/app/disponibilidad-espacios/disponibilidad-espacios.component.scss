@@ -1,0 +1,30 @@
+.spaces-table {
+  width: 100%;
+}
+
+.timeslot-cell {
+  font-size: 0.85rem;
+  white-space: nowrap;
+  min-width: 160px;
+}
+
+.room-header {
+  text-align: center;
+  min-width: 120px;
+}
+
+td.available {
+  background-color: #e8f5e9;
+  text-align: center;
+}
+
+td.occupied {
+  background-color: #ffebee;
+  text-align: center;
+}
+
+.occupied-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #c62828;
+}

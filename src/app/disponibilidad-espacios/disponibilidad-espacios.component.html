@@ -1,0 +1,39 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Disponibilidad de Espacios Físicos</mat-card-title>
+    <mat-card-subtitle>Verde = disponible · Rojo = ocupado</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    <div *ngIf="loading" style="text-align:center;padding:32px">
+      <mat-spinner diameter="48"></mat-spinner>
+    </div>
+
+    <div *ngIf="!loading" style="overflow-x:auto">
+      <table mat-table [dataSource]="slotRows" class="spaces-table">
+
+        <ng-container matColumnDef="timeslot">
+          <th mat-header-cell *matHeaderCellDef>Franja</th>
+          <td mat-cell *matCellDef="let row" class="timeslot-cell">
+            {{ slotLabel(row.timeslot) }}
+          </td>
+        </ng-container>
+
+        <ng-container *ngFor="let room of rooms" [matColumnDef]="room.id.toString()">
+          <th mat-header-cell *matHeaderCellDef class="room-header">{{ room.name }}</th>
+          <td mat-cell *matCellDef="let row"
+            [class.available]="isAvailable(row, room.id)"
+            [class.occupied]="!isAvailable(row, room.id)"
+            [matTooltip]="row.cells[room.id] ? row.cells[room.id].subject + ' — ' + row.cells[room.id].teacher : 'Disponible'">
+            <span *ngIf="!isAvailable(row, room.id)" class="occupied-label">
+              {{ row.cells[room.id]?.subject }}
+            </span>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+  </mat-card-content>
+</mat-card>

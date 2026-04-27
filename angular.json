@@ -1,0 +1,112 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "sga-optimizacion-horarios-mf": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss",
+          "skipTests": true
+        }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular-builders/custom-webpack:browser",
+          "options": {
+            "outputPath": "dist",
+            "index": "src/index.html",
+            "main": "src/main.single-spa.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "src/favicon.ico",
+              "src/assets"
+            ],
+            "styles": ["src/styles.scss"],
+            "scripts": [],
+            "customWebpackConfig": {
+              "path": "extra-webpack.config.js",
+              "libraryName": "sga-optimizacion-horarios-mf",
+              "libraryTarget": "umd"
+            }
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "outputHashing": "none",
+              "sourceMap": false,
+              "namedChunks": false,
+              "aot": true,
+              "extractLicenses": true,
+              "buildOptimizer": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.production.ts"
+                }
+              ],
+              "deployUrl": "https://sgaoptimizacionhorarios.portaloas.udistrital.edu.co/"
+            },
+            "development": {
+              "optimization": true,
+              "outputHashing": "none",
+              "sourceMap": false,
+              "namedChunks": false,
+              "aot": true,
+              "extractLicenses": true,
+              "buildOptimizer": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.development.ts"
+                }
+              ],
+              "deployUrl": "https://pruebassgaoptimizacionhorarios.portaloas.udistrital.edu.co/"
+            },
+            "local": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
+              "outputHashing": "none",
+              "deployUrl": "http://localhost:4225/"
+            }
+          },
+          "defaultConfiguration": "local"
+        },
+        "serve": {
+          "builder": "@angular-builders/custom-webpack:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "sga-optimizacion-horarios-mf:build:production"
+            },
+            "development": {
+              "buildTarget": "sga-optimizacion-horarios-mf:build:development"
+            },
+            "local": {
+              "buildTarget": "sga-optimizacion-horarios-mf:build:local"
+            }
+          },
+          "defaultConfiguration": "local"
+        },
+        "extract-i18n": {
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "buildTarget": "sga-optimizacion-horarios-mf:build"
+          }
+        }
+      }
+    }
+  },
+  "cli": {
+    "analytics": false
+  }
+}
