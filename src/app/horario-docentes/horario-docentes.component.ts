@@ -2,66 +2,69 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Subject, takeUntil } from 'rxjs';
-import { TimetableService } from '../services/timetable.service';
-import { Lesson } from '../models/lesson.model';
-import { Timeslot } from '../models/timeslot.model';
-
-interface TeacherRow {
-  teacher: string;
-  slots: { [key: string]: Lesson | null };
-}
+import { Subject, takeUntil, filter } from 'rxjs';
+import { HorarioService } from '../services/horario.service';
+import { HorarioStateService } from '../services/horario-state.service';
+import { DocenteAsignacionResult, AsignacionItem, FranjaDTO } from '../models/docente-asignacion.model';
 
 @Component({
   selector: 'app-horario-docentes',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatCardModule, MatChipsModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatTableModule, MatCardModule, MatProgressSpinnerModule],
   templateUrl: './horario-docentes.component.html',
   styleUrl: './horario-docentes.component.scss',
 })
 export class HorarioDocentesComponent implements OnInit, OnDestroy {
-  timeslots: Timeslot[] = [];
-  teacherRows: TeacherRow[] = [];
-  displayedColumns: string[] = [];
-  loading = true;
+  result: DocenteAsignacionResult | null = null;
+  loading = false;
+  error: string | null = null;
+
+  readonly displayedColumns = ['grupo', 'asignatura', 'docente', 'vinculacion', 'area', 'franjas', 'estado'];
+
+  readonly DIAS: Record<number, string> = {
+    1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb', 7: 'Dom'
+  };
+
   private destroy$ = new Subject<void>();
 
-  constructor(private timetableService: TimetableService) {}
+  constructor(
+    private horarioService: HorarioService,
+    private horarioState: HorarioStateService
+  ) {}
 
   ngOnInit(): void {
-    this.timetableService.getTimeTable()
+    this.horarioState.changes()
+      .pipe(
+        filter((id): id is number => id !== null),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(id => this.cargar(id));
+  }
+
+  cargar(periodoId: number): void {
+    this.loading = true;
+    this.error = null;
+    this.result = null;
+    this.horarioService.resolverDocentes(periodoId)
       .pipe(takeUntil(this.destroy$))
-      .subscribe(tt => {
-        this.timeslots = tt.timeslotList;
-        this.buildGrid(tt.lessonList);
-        this.loading = false;
+      .subscribe({
+        next: r => { this.result = r; this.loading = false; },
+        error: () => {
+          this.error = 'No se pudo conectar con el backend. Verifique que el servidor esté corriendo en localhost:8081.';
+          this.loading = false;
+        }
       });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  franjaLabel(f: FranjaDTO): string {
+    return `${this.DIAS[f.dia] ?? 'D' + f.dia} ${f.horaInicio}–${f.horaFin}`;
   }
 
-  slotKey(ts: Timeslot): string {
-    return `${ts.dayOfWeek}_${ts.startTime}`;
+  docenteNombre(item: AsignacionItem): string {
+    if (!item.docente) return 'Sin asignar';
+    return `${item.docente.nombre} ${item.docente.apellido}`;
   }
 
-  private buildGrid(lessons: Lesson[]): void {
-    const teacherMap = new Map<string, TeacherRow>();
-
-    for (const lesson of lessons) {
-      if (!teacherMap.has(lesson.teacher)) {
-        teacherMap.set(lesson.teacher, { teacher: lesson.teacher, slots: {} });
-      }
-      if (lesson.timeslot) {
-        teacherMap.get(lesson.teacher)!.slots[this.slotKey(lesson.timeslot)] = lesson;
-      }
-    }
-
-    this.teacherRows = Array.from(teacherMap.values()).sort((a, b) => a.teacher.localeCompare(b.teacher));
-    this.displayedColumns = ['teacher', ...this.timeslots.map(ts => this.slotKey(ts))];
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

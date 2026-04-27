@@ -1,40 +1,157 @@
-.schedule-table {
-  width: 100%;
-  min-width: 800px;
-}
-
-.slot-header {
-  text-align: center;
-  min-width: 110px;
-
-  .time-label {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    font-weight: normal;
-  }
-}
-
-.lesson-cell {
+/* ── Estados ── */
+.empty-state, .loading-state, .error-state {
   display: flex;
   flex-direction: column;
-  padding: 4px 0;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 12px;
+  color: #666;
+  text-align: center;
 
-  .subject {
-    font-weight: 500;
-    font-size: 0.85rem;
-  }
-
-  .teacher {
-    font-size: 0.75rem;
-    color: #1976d2;
-  }
-
-  .room {
-    font-size: 0.75rem;
-    color: #666;
-  }
+  .material-icons { font-size: 48px; opacity: 0.4; }
+  p { margin: 0; font-size: 0.9rem; }
 }
 
-.empty-cell {
-  color: #ccc;
+.error-state {
+  color: #c62828;
+  .material-icons { opacity: 0.7; }
+}
+
+/* ── Resumen ── */
+.resumen-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.resumen-card {
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+
+  mat-card-content { padding: 16px 8px !important; }
+}
+
+.resumen-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  line-height: 1;
+}
+
+.resumen-label {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+.resumen-card--est .resumen-value { color: #1565c0; }
+
+/* ── Accordion ── */
+.grupos-accordion {
+  display: block;
+}
+
+.grupo-panel {
+  margin-bottom: 4px;
+}
+
+.panel-codigo {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #004F2D;
+  margin-right: 10px;
+}
+
+.panel-asignatura {
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.panel-docente {
+  font-size: 0.8rem;
+  color: #666;
+  margin-right: 12px;
+}
+
+.badge-est {
+  display: inline-block;
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-est--cero {
+  background: #fce4ec;
+  color: #c62828;
+}
+
+/* ── Panel body ── */
+.panel-body {
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.franjas-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.section-label {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #555;
+}
+
+.franja-chip {
+  display: inline-block;
+  background: #e8eaf6;
+  color: #3949ab;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+}
+
+.text-muted { color: #aaa; font-size: 0.8rem; }
+
+.est-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.codigos-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.codigo-chip {
+  display: inline-block;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  font-family: monospace;
+  color: #333;
+}
+
+.no-est {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #888;
+  font-size: 0.82rem;
+
+  .material-icons { font-size: 16px; color: #bbb; }
 }

@@ -1,41 +1,99 @@
-<mat-card>
-  <mat-card-header>
-    <mat-card-title>Horario por Docente</mat-card-title>
-    <mat-card-subtitle>Clases asignadas a cada docente por franja horaria</mat-card-subtitle>
-  </mat-card-header>
+<div *ngIf="!result && !loading && !error" class="empty-state">
+  <span class="material-icons">manage_search</span>
+  <p>Ingrese un ID de período académico y presione <strong>Buscar</strong> para cargar la optimización de docentes.</p>
+</div>
 
-  <mat-card-content>
-    <div *ngIf="loading" style="text-align:center;padding:32px">
-      <mat-spinner diameter="48"></mat-spinner>
-    </div>
+<div *ngIf="loading" class="loading-state">
+  <mat-spinner diameter="48"></mat-spinner>
+  <p>Ejecutando solver de docentes... esto puede tardar unos segundos.</p>
+</div>
 
-    <div *ngIf="!loading" style="overflow-x:auto">
-      <table mat-table [dataSource]="teacherRows" class="schedule-table">
+<div *ngIf="error" class="error-state">
+  <span class="material-icons">error_outline</span>
+  <p>{{ error }}</p>
+</div>
 
-        <ng-container matColumnDef="teacher">
-          <th mat-header-cell *matHeaderCellDef>Docente</th>
-          <td mat-cell *matCellDef="let row"><strong>{{ row.teacher }}</strong></td>
-        </ng-container>
+<ng-container *ngIf="result && !loading">
 
-        <ng-container *ngFor="let ts of timeslots" [matColumnDef]="slotKey(ts)">
-          <th mat-header-cell *matHeaderCellDef class="slot-header">
-            <div>{{ ts.dayOfWeek | slice:0:3 }}</div>
-            <div class="time-label">{{ ts.startTime }} - {{ ts.endTime }}</div>
-          </th>
-          <td mat-cell *matCellDef="let row">
-            <ng-container *ngIf="row.slots[slotKey(ts)] as lesson; else emptyCell">
-              <div class="lesson-cell">
-                <span class="subject">{{ lesson.subject }}</span>
-                <span class="room">{{ lesson.room?.name }}</span>
-              </div>
-            </ng-container>
-            <ng-template #emptyCell><span class="empty-cell">—</span></ng-template>
-          </td>
-        </ng-container>
+  <!-- Tarjetas de resumen -->
+  <div class="summary-row">
+    <mat-card class="summary-card">
+      <mat-card-content>
+        <div class="summary-value">{{ result.totalGrupos }}</div>
+        <div class="summary-label">Total Grupos</div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="summary-card summary-card--ok">
+      <mat-card-content>
+        <div class="summary-value">{{ result.gruposAsignados }}</div>
+        <div class="summary-label">Con Docente</div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="summary-card summary-card--warn">
+      <mat-card-content>
+        <div class="summary-value">{{ result.gruposSinDocente }}</div>
+        <div class="summary-label">Sin Docente</div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="summary-card summary-card--score">
+      <mat-card-content>
+        <div class="summary-value score-val">{{ result.score ?? '—' }}</div>
+        <div class="summary-label">Score OptaPlanner</div>
+      </mat-card-content>
+    </mat-card>
+  </div>
 
-        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      </table>
-    </div>
-  </mat-card-content>
-</mat-card>
+  <!-- Tabla de asignaciones -->
+  <div style="overflow-x:auto; margin-top: 16px;">
+    <table mat-table [dataSource]="result.asignaciones" class="docentes-table">
+
+      <ng-container matColumnDef="grupo">
+        <th mat-header-cell *matHeaderCellDef>Grupo</th>
+        <td mat-cell *matCellDef="let row"><strong>{{ row.grupoCodigo }}</strong></td>
+      </ng-container>
+
+      <ng-container matColumnDef="asignatura">
+        <th mat-header-cell *matHeaderCellDef>Asignatura</th>
+        <td mat-cell *matCellDef="let row">{{ row.asignatura ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="docente">
+        <th mat-header-cell *matHeaderCellDef>Docente</th>
+        <td mat-cell *matCellDef="let row" [class.sin-docente]="!row.asignado">
+          {{ docenteNombre(row) }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="vinculacion">
+        <th mat-header-cell *matHeaderCellDef>Tipo Vinculación</th>
+        <td mat-cell *matCellDef="let row">{{ row.docente?.tipoVinculacion ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="area">
+        <th mat-header-cell *matHeaderCellDef>Área Conocimiento</th>
+        <td mat-cell *matCellDef="let row">{{ row.docente?.areaConocimiento ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="franjas">
+        <th mat-header-cell *matHeaderCellDef>Franjas Horarias</th>
+        <td mat-cell *matCellDef="let row">
+          <span *ngFor="let f of row.horarios" class="franja-chip">{{ franjaLabel(f) }}</span>
+          <span *ngIf="!row.horarios?.length" class="text-muted">Sin franja</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="estado-chip" [class.estado-ok]="row.asignado" [class.estado-err]="!row.asignado">
+            {{ row.asignado ? 'Asignado' : 'Sin docente' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.row-sin-docente]="!row.asignado"></tr>
+    </table>
+  </div>
+
+</ng-container>

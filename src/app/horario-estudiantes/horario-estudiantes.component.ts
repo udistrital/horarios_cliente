@@ -1,67 +1,93 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subject, takeUntil } from 'rxjs';
-import { TimetableService } from '../services/timetable.service';
-import { Lesson } from '../models/lesson.model';
-import { Timeslot } from '../models/timeslot.model';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { Subject, takeUntil, filter, forkJoin } from 'rxjs';
+import { HorarioService } from '../services/horario.service';
+import { HorarioStateService } from '../services/horario-state.service';
+import { AsignacionItem, FranjaDTO } from '../models/docente-asignacion.model';
 
-interface GroupRow {
-  studentGroup: string;
-  slots: { [key: string]: Lesson | null };
+interface GrupoConEstudiantes {
+  grupoId: number;
+  grupoCodigo: string;
+  asignatura: string;
+  docente: string;
+  franjas: FranjaDTO[];
+  estudiantes: string[];
 }
 
 @Component({
   selector: 'app-horario-estudiantes',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatCardModule, MatProgressSpinnerModule, MatTooltipModule],
+  imports: [CommonModule, MatCardModule, MatProgressSpinnerModule, MatExpansionModule],
   templateUrl: './horario-estudiantes.component.html',
   styleUrl: './horario-estudiantes.component.scss',
 })
 export class HorarioEstudiantesComponent implements OnInit, OnDestroy {
-  timeslots: Timeslot[] = [];
-  groupRows: GroupRow[] = [];
-  displayedColumns: string[] = [];
-  loading = true;
+  grupos: GrupoConEstudiantes[] = [];
+  loading = false;
+  error: string | null = null;
+  hasData = false;
+  totalEstudiantes = 0;
+
+  readonly DIAS: Record<number, string> = {
+    1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb', 7: 'Dom'
+  };
+
   private destroy$ = new Subject<void>();
 
-  constructor(private timetableService: TimetableService) {}
+  constructor(
+    private horarioService: HorarioService,
+    private horarioState: HorarioStateService
+  ) {}
 
   ngOnInit(): void {
-    this.timetableService.getTimeTable()
+    this.horarioState.changes()
+      .pipe(
+        filter((id): id is number => id !== null),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(id => this.cargar(id));
+  }
+
+  cargar(periodoId: number): void {
+    this.loading = true;
+    this.error = null;
+    this.hasData = false;
+    this.grupos = [];
+
+    forkJoin({
+      docentes: this.horarioService.resolverDocentes(periodoId),
+      estudiantes: this.horarioService.resultadoEstudiantes(periodoId)
+    })
       .pipe(takeUntil(this.destroy$))
-      .subscribe(tt => {
-        this.timeslots = tt.timeslotList;
-        this.buildGrid(tt.lessonList);
-        this.loading = false;
+      .subscribe({
+        next: ({ docentes, estudiantes }) => {
+          this.grupos = docentes.asignaciones.map((a: AsignacionItem) => ({
+            grupoId: a.grupoId,
+            grupoCodigo: a.grupoCodigo,
+            asignatura: a.asignatura ?? '—',
+            docente: a.docente
+              ? `${a.docente.nombre} ${a.docente.apellido}`
+              : 'Sin docente asignado',
+            franjas: a.horarios ?? [],
+            estudiantes: estudiantes[a.grupoId] ?? []
+          }));
+          this.totalEstudiantes = this.grupos.reduce((s, g) => s + g.estudiantes.length, 0);
+          this.loading = false;
+          this.hasData = true;
+        },
+        error: () => {
+          this.error = 'No se pudo conectar con el backend. Verifique que el servidor esté corriendo en localhost:8081.';
+          this.loading = false;
+        }
       });
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+  franjaLabel(f: FranjaDTO): string {
+    return `${this.DIAS[f.dia] ?? 'D' + f.dia} ${f.horaInicio}–${f.horaFin}`;
   }
 
-  slotKey(ts: Timeslot): string {
-    return `${ts.dayOfWeek}_${ts.startTime}`;
-  }
-
-  private buildGrid(lessons: Lesson[]): void {
-    const groupMap = new Map<string, GroupRow>();
-
-    for (const lesson of lessons) {
-      if (!groupMap.has(lesson.studentGroup)) {
-        groupMap.set(lesson.studentGroup, { studentGroup: lesson.studentGroup, slots: {} });
-      }
-      if (lesson.timeslot) {
-        groupMap.get(lesson.studentGroup)!.slots[this.slotKey(lesson.timeslot)] = lesson;
-      }
-    }
-
-    this.groupRows = Array.from(groupMap.values()).sort((a, b) => a.studentGroup.localeCompare(b.studentGroup));
-    this.displayedColumns = ['studentGroup', ...this.timeslots.map(ts => this.slotKey(ts))];
-  }
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 }

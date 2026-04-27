@@ -1,35 +1,100 @@
-.schedule-table {
-  width: 100%;
-  min-width: 800px;
-}
-
-.slot-header {
-  text-align: center;
-  min-width: 110px;
-
-  .time-label {
-    font-size: 0.75rem;
-    opacity: 0.7;
-    font-weight: normal;
-  }
-}
-
-.lesson-cell {
+/* ── Estados vacío / cargando / error ── */
+.empty-state, .loading-state, .error-state {
   display: flex;
   flex-direction: column;
-  padding: 4px 0;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 12px;
+  color: #666;
+  text-align: center;
 
-  .subject {
-    font-weight: 500;
-    font-size: 0.85rem;
-  }
+  .material-icons { font-size: 48px; opacity: 0.4; }
+  p { margin: 0; font-size: 0.9rem; }
+}
 
-  .room {
-    font-size: 0.75rem;
-    color: #666;
+.error-state {
+  color: #c62828;
+  .material-icons { opacity: 0.7; }
+}
+
+/* ── Tarjetas resumen ── */
+.summary-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.summary-card {
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+
+  mat-card-content {
+    padding: 16px 8px !important;
   }
 }
 
-.empty-cell {
-  color: #ccc;
+.summary-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #333;
+  line-height: 1;
 }
+
+.score-val {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 4px;
+}
+
+.summary-card--ok   .summary-value { color: #2e7d32; }
+.summary-card--warn .summary-value { color: #e65100; }
+.summary-card--score                { background: #f5f5f5 !important; }
+
+/* ── Tabla ── */
+.docentes-table {
+  width: 100%;
+  min-width: 900px;
+}
+
+th.mat-mdc-header-cell {
+  font-weight: 600;
+  color: #333;
+  background: #fafafa;
+}
+
+.franja-chip {
+  display: inline-block;
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 12px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  margin: 2px 3px 2px 0;
+  white-space: nowrap;
+}
+
+.text-muted { color: #aaa; font-size: 0.8rem; }
+
+.estado-chip {
+  display: inline-block;
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.estado-ok  { background: #e8f5e9; color: #2e7d32; }
+.estado-err { background: #fbe9e7; color: #bf360c; }
+
+.sin-docente { color: #bf360c; font-style: italic; }
+
+.row-sin-docente { background: #fff8f6; }

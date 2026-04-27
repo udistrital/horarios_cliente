@@ -1,6 +1,5 @@
 <div class="mf-container">
 
-  <!-- Sub-navegación del módulo -->
   <nav class="mf-nav">
     <a class="mf-nav-link" [routerLink]="['horario-docentes']" routerLinkActive="mf-nav-link--active">
       <span class="material-icons">person</span>
@@ -17,24 +16,22 @@
 
     <span class="mf-nav-spacer"></span>
 
-    <!-- Control del solver -->
-    <div class="solver-control">
-      <span class="solver-score" *ngIf="score">{{ score }}</span>
-      <button class="btn-solver btn-solver--run" *ngIf="!solving" (click)="solve()">
-        <span class="material-icons">play_arrow</span> Optimizar
-      </button>
-      <button class="btn-solver btn-solver--stop" *ngIf="solving" (click)="stopSolving()">
-        <span class="material-icons">stop</span> Detener
+    <div class="periodo-control">
+      <label class="periodo-label">Período académico ID:</label>
+      <input
+        class="periodo-input"
+        type="number"
+        [(ngModel)]="periodoId"
+        placeholder="Ej: 1"
+        min="1"
+        (keydown)="onKeydown($event)" />
+      <button class="btn-buscar" (click)="aplicarPeriodo()">
+        <span class="material-icons">search</span>
+        Buscar
       </button>
     </div>
   </nav>
 
-  <!-- Barra de progreso mientras el solver está activo -->
-  <div class="solver-progress" *ngIf="solving">
-    <div class="solver-progress-bar"></div>
-  </div>
-
-  <!-- Área de contenido: aquí carga cada vista -->
   <div class="mf-content">
     <router-outlet></router-outlet>
   </div>
