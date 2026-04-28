@@ -1,157 +1,117 @@
-/* ── Estados ── */
 .empty-state, .loading-state, .error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 48px 24px;
-  gap: 12px;
-  color: #666;
-  text-align: center;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 48px 24px; gap: 12px;
+  color: #666; text-align: center;
+  .material-icons { font-size: 48px; opacity: 0.4; }
+  p { margin: 0; font-size: 0.9rem; }
+}
+.error-state { color: #c62828; .material-icons { opacity: 0.7; } }
 
+/* ── Buscador ── */
+.search-card { margin-bottom: 20px; }
+
+.search-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+
+.search-icon { color: #004F2D; font-size: 22px; }
+
+.search-input {
+  flex: 1; min-width: 200px; max-width: 340px;
+  padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px;
+  font-size: 0.9rem; outline: none;
+  &:focus { border-color: #004F2D; box-shadow: 0 0 0 2px rgba(0,79,45,0.15); }
+}
+
+.btn-buscar {
+  display: flex; align-items: center; gap: 4px;
+  padding: 8px 16px; border: none; border-radius: 4px;
+  background: #004F2D; color: #fff; font-size: 0.875rem;
+  font-weight: 500; cursor: pointer; transition: background 0.2s;
+  .material-icons { font-size: 18px; }
+  &:hover { background: #00391f; }
+}
+
+/* ── No encontrado ── */
+.not-found {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 40px; color: #888; text-align: center;
   .material-icons { font-size: 48px; opacity: 0.4; }
   p { margin: 0; font-size: 0.9rem; }
 }
 
-.error-state {
-  color: #c62828;
-  .material-icons { opacity: 0.7; }
+/* ── Cabecera del estudiante ── */
+.student-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; background: #e8f5e9; border-radius: 6px;
+  font-size: 0.95rem; color: #1b5e20; margin-bottom: 16px;
+  .material-icons { font-size: 22px; }
 }
 
-/* ── Resumen ── */
-.resumen-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
+.materias-badge {
+  margin-left: auto; background: #004F2D; color: #fff;
+  border-radius: 12px; padding: 2px 10px; font-size: 0.78rem; font-weight: 600;
 }
 
-.resumen-card {
-  flex: 1;
-  min-width: 120px;
-  text-align: center;
+/* ── Grilla semanal ── */
+.timetable-wrapper { overflow-x: auto; margin-bottom: 24px; }
 
-  mat-card-content { padding: 16px 8px !important; }
+.timetable {
+  width: 100%; border-collapse: collapse; min-width: 500px; font-size: 0.85rem;
 }
 
-.resumen-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #333;
-  line-height: 1;
+.hora-col, .dia-col {
+  padding: 10px 12px; background: #004F2D; color: #fff;
+  font-weight: 600; text-align: center; border: 1px solid #003d22;
+  white-space: nowrap;
+}
+.hora-col { text-align: left; min-width: 130px; }
+.dia-col  { min-width: 150px; }
+
+.hora-cell {
+  padding: 8px 12px; background: #f5f5f5; font-weight: 600;
+  font-size: 0.8rem; border: 1px solid #e0e0e0; white-space: nowrap;
 }
 
-.resumen-label {
-  font-size: 0.75rem;
-  color: #888;
-  margin-top: 4px;
+.celda {
+  padding: 6px 8px; border: 1px solid #e0e0e0;
+  vertical-align: top; min-height: 52px;
+}
+.celda-clase { background: #e8f5e9; }
+.celda-libre { background: #fafafa; }
+
+.clase-bloque {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 4px 6px; background: #fff;
+  border-left: 3px solid #004F2D; border-radius: 0 4px 4px 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+.clase-asignatura { font-weight: 700; font-size: 0.8rem; color: #004F2D; }
+.clase-docente    { font-size: 0.72rem; color: #555; }
+.clase-grupo      { font-size: 0.68rem; color: #999; font-style: italic; }
+.libre-label      { color: #ccc; font-size: 0.8rem; }
+
+/* ── Lista resumen ── */
+.materias-list { margin-top: 8px; }
+
+.materias-title {
+  font-size: 0.9rem; font-weight: 600; color: #333;
+  margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid #e0e0e0;
 }
 
-.resumen-card--est .resumen-value { color: #1565c0; }
-
-/* ── Accordion ── */
-.grupos-accordion {
-  display: block;
+.materia-card {
+  padding: 10px 14px; border: 1px solid #e0e0e0; border-radius: 6px;
+  margin-bottom: 8px; background: #fafafa;
 }
-
-.grupo-panel {
-  margin-bottom: 4px;
+.materia-nombre { font-weight: 600; font-size: 0.9rem; color: #222; margin-bottom: 4px; }
+.materia-detalle { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.chip-grupo {
+  background: #004F2D; color: #fff; border-radius: 4px;
+  padding: 1px 7px; font-size: 0.75rem; font-weight: 600;
 }
-
-.panel-codigo {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #004F2D;
-  margin-right: 10px;
-}
-
-.panel-asignatura {
-  font-size: 0.875rem;
-  color: #333;
-}
-
-.panel-docente {
-  font-size: 0.8rem;
-  color: #666;
-  margin-right: 12px;
-}
-
-.badge-est {
-  display: inline-block;
-  background: #e3f2fd;
-  color: #1565c0;
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.badge-est--cero {
-  background: #fce4ec;
-  color: #c62828;
-}
-
-/* ── Panel body ── */
-.panel-body {
-  padding: 8px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.franjas-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.section-label {
-  font-weight: 600;
-  font-size: 0.82rem;
-  color: #555;
-}
-
+.materia-docente { font-size: 0.8rem; color: #555; }
+.materia-franjas { display: flex; flex-wrap: wrap; gap: 5px; }
 .franja-chip {
-  display: inline-block;
-  background: #e8eaf6;
-  color: #3949ab;
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 0.75rem;
-}
-
-.text-muted { color: #aaa; font-size: 0.8rem; }
-
-.est-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.codigos-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.codigo-chip {
-  display: inline-block;
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 0.78rem;
-  font-family: monospace;
-  color: #333;
-}
-
-.no-est {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #888;
-  font-size: 0.82rem;
-
-  .material-icons { font-size: 16px; color: #bbb; }
+  display: inline-block; background: #e8eaf6; color: #3949ab;
+  border-radius: 12px; padding: 2px 8px; font-size: 0.73rem;
 }

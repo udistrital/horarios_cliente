@@ -1,0 +1,68 @@
+<div *ngIf="!hasData && !loading && !error" class="empty-state">
+  <span class="material-icons">manage_search</span>
+  <p>Ingrese un ID de período académico y presione <strong>Buscar</strong> para ver la distribución de estudiantes por grupo.</p>
+</div>
+
+<div *ngIf="loading" class="loading-state">
+  <mat-spinner diameter="48"></mat-spinner>
+  <p>Ejecutando solvers... esto puede tardar unos segundos.</p>
+</div>
+
+<div *ngIf="error" class="error-state">
+  <span class="material-icons">error_outline</span>
+  <p>{{ error }}</p>
+</div>
+
+<ng-container *ngIf="hasData && !loading">
+
+  <div class="resumen-row">
+    <mat-card class="resumen-card">
+      <mat-card-content>
+        <div class="resumen-value">{{ grupos.length }}</div>
+        <div class="resumen-label">Grupos</div>
+      </mat-card-content>
+    </mat-card>
+    <mat-card class="resumen-card resumen-card--est">
+      <mat-card-content>
+        <div class="resumen-value">{{ totalEstudiantes }}</div>
+        <div class="resumen-label">Estudiantes Asignados</div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <mat-accordion multi class="grupos-accordion">
+    <mat-expansion-panel *ngFor="let grupo of grupos" class="grupo-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <span class="panel-codigo">{{ grupo.grupoCodigo }}</span>
+          <span class="panel-asignatura">{{ grupo.asignatura }}</span>
+        </mat-panel-title>
+        <mat-panel-description>
+          <span class="panel-docente">{{ grupo.docente }}</span>
+          <span class="badge-est" [class.badge-est--cero]="grupo.estudiantes.length === 0">
+            {{ grupo.estudiantes.length }} est.
+          </span>
+        </mat-panel-description>
+      </mat-expansion-panel-header>
+
+      <div class="panel-body">
+        <div class="franjas-row">
+          <span class="section-label">Franjas horarias:</span>
+          <span *ngFor="let f of grupo.franjas" class="franja-chip">{{ franjaLabel(f) }}</span>
+          <span *ngIf="!grupo.franjas.length" class="text-muted">Sin franjas asignadas</span>
+        </div>
+        <div *ngIf="grupo.estudiantes.length > 0" class="est-section">
+          <span class="section-label">Estudiantes asignados ({{ grupo.estudiantes.length }}):</span>
+          <div class="codigos-grid">
+            <span *ngFor="let c of grupo.estudiantes" class="codigo-chip">{{ c }}</span>
+          </div>
+        </div>
+        <div *ngIf="grupo.estudiantes.length === 0" class="no-est">
+          <span class="material-icons">info</span>
+          El solver no asignó estudiantes a este grupo.
+        </div>
+      </div>
+    </mat-expansion-panel>
+  </mat-accordion>
+
+</ng-container>

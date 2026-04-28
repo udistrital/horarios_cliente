@@ -8,14 +8,11 @@ import { PreinscripcionSimpleDTO } from '../models/preinscripcion.model';
 @Injectable({ providedIn: 'root' })
 export class HorarioService {
   private readonly base = environment.API_URL;
-  private docenteReqs = new Map<number, Observable<DocenteAsignacionResult>>();
+  private docenteReqs    = new Map<number, Observable<DocenteAsignacionResult>>();
+  private estudiantesReqs = new Map<number, Observable<{ [grupoId: number]: string[] }>>();
 
   constructor(private http: HttpClient) {}
 
-  /**
-   * Ejecuta el solver de docentes para el período dado.
-   * Resultados se comparten entre suscriptores para evitar múltiples ejecuciones del solver.
-   */
   resolverDocentes(periodoId: number): Observable<DocenteAsignacionResult> {
     if (!this.docenteReqs.has(periodoId)) {
       const req = this.http
@@ -26,19 +23,16 @@ export class HorarioService {
     return this.docenteReqs.get(periodoId)!;
   }
 
-  /**
-   * Ejecuta el solver de grupos y retorna la asignación de estudiantes por grupo.
-   * Respuesta: { grupoId: [codigosEstudiantes] }
-   */
   resultadoEstudiantes(periodoId: number): Observable<{ [grupoId: number]: string[] }> {
-    return this.http.get<{ [grupoId: number]: string[] }>(
-      `${this.base}/solver/resultado/${periodoId}`
-    );
+    if (!this.estudiantesReqs.has(periodoId)) {
+      const req = this.http
+        .get<{ [grupoId: number]: string[] }>(`${this.base}/solver/resultado/${periodoId}`)
+        .pipe(shareReplay({ bufferSize: 1, refCount: false }));
+      this.estudiantesReqs.set(periodoId, req);
+    }
+    return this.estudiantesReqs.get(periodoId)!;
   }
 
-  /**
-   * Retorna el listado de preinscripciones del período (sin ejecutar solver).
-   */
   resumenEstudiantes(periodoId: number): Observable<PreinscripcionSimpleDTO[]> {
     return this.http.get<PreinscripcionSimpleDTO[]>(
       `${this.base}/solver/resumen/${periodoId}`
@@ -47,5 +41,6 @@ export class HorarioService {
 
   clearCache(): void {
     this.docenteReqs.clear();
+    this.estudiantesReqs.clear();
   }
 }

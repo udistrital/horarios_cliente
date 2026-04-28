@@ -1,74 +1,104 @@
-<div *ngIf="!hasData && !loading && !error" class="empty-state">
+<!-- Estado: sin período -->
+<div *ngIf="!datosListos && !loading && !error" class="empty-state">
   <span class="material-icons">manage_search</span>
-  <p>Ingrese un ID de período académico y presione <strong>Buscar</strong> para cargar la asignación de estudiantes a grupos.</p>
+  <p>Ingrese un ID de período académico y presione <strong>Buscar</strong> para habilitar la búsqueda de horarios.</p>
 </div>
 
+<!-- Estado: cargando solvers -->
 <div *ngIf="loading" class="loading-state">
   <mat-spinner diameter="48"></mat-spinner>
-  <p>Ejecutando solver de grupos y docentes... esto puede tardar unos segundos.</p>
+  <p>Ejecutando solvers de docentes y grupos... esto puede tardar unos segundos.</p>
 </div>
 
+<!-- Estado: error -->
 <div *ngIf="error" class="error-state">
   <span class="material-icons">error_outline</span>
   <p>{{ error }}</p>
 </div>
 
-<ng-container *ngIf="hasData && !loading">
+<!-- Datos listos: mostrar buscador -->
+<ng-container *ngIf="datosListos && !loading">
 
-  <!-- Resumen global -->
-  <div class="resumen-row">
-    <mat-card class="resumen-card">
-      <mat-card-content>
-        <div class="resumen-value">{{ grupos.length }}</div>
-        <div class="resumen-label">Grupos</div>
-      </mat-card-content>
-    </mat-card>
-    <mat-card class="resumen-card resumen-card--est">
-      <mat-card-content>
-        <div class="resumen-value">{{ totalEstudiantes }}</div>
-        <div class="resumen-label">Estudiantes Asignados</div>
-      </mat-card-content>
-    </mat-card>
+  <mat-card class="search-card">
+    <mat-card-content>
+      <div class="search-row">
+        <span class="material-icons search-icon">badge</span>
+        <input
+          class="search-input"
+          type="text"
+          [(ngModel)]="codigoInput"
+          placeholder="Ingrese el código del estudiante"
+          (keydown)="onEnter($event)" />
+        <button class="btn-buscar" (click)="buscar()">
+          <span class="material-icons">search</span>
+          Ver horario
+        </button>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Estudiante no encontrado -->
+  <div *ngIf="estudianteEncontrado === false" class="not-found">
+    <span class="material-icons">person_off</span>
+    <p>El código <strong>{{ codigoBuscado }}</strong> no fue asignado a ningún grupo en este período.</p>
   </div>
 
-  <!-- Lista expandible de grupos -->
-  <mat-accordion multi class="grupos-accordion">
-    <mat-expansion-panel *ngFor="let grupo of grupos" class="grupo-panel">
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          <span class="panel-codigo">{{ grupo.grupoCodigo }}</span>
-          <span class="panel-asignatura">{{ grupo.asignatura }}</span>
-        </mat-panel-title>
-        <mat-panel-description>
-          <span class="panel-docente">{{ grupo.docente }}</span>
-          <span class="badge-est" [class.badge-est--cero]="grupo.estudiantes.length === 0">
-            {{ grupo.estudiantes.length }} est.
+  <!-- Horario del estudiante -->
+  <ng-container *ngIf="estudianteEncontrado === true">
+
+    <div class="student-header">
+      <span class="material-icons">school</span>
+      <span>Horario del estudiante <strong>{{ codigoBuscado }}</strong></span>
+      <span class="materias-badge">{{ materias.length }} materia(s)</span>
+    </div>
+
+    <!-- Grilla semanal -->
+    <div class="timetable-wrapper" *ngIf="filasTimetable.length > 0">
+      <table class="timetable">
+        <thead>
+          <tr>
+            <th class="hora-col">Hora</th>
+            <th *ngFor="let dia of dias" class="dia-col">{{ DIAS_NOMBRE[dia] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fila of filasTimetable">
+            <td class="hora-cell">{{ fila.horaInicio }} – {{ fila.horaFin }}</td>
+            <td *ngFor="let dia of dias"
+                class="celda"
+                [class.celda-clase]="fila.celdas[dia] !== null"
+                [class.celda-libre]="fila.celdas[dia] === null">
+              <ng-container *ngIf="fila.celdas[dia] as clase">
+                <div class="clase-bloque">
+                  <span class="clase-asignatura">{{ clase.asignatura }}</span>
+                  <span class="clase-docente">{{ clase.docente }}</span>
+                  <span class="clase-grupo">{{ clase.grupoCodigo }}</span>
+                </div>
+              </ng-container>
+              <span *ngIf="fila.celdas[dia] === null" class="libre-label">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Lista resumen de materias -->
+    <div class="materias-list">
+      <h4 class="materias-title">Resumen de materias</h4>
+      <div class="materia-card" *ngFor="let m of materias">
+        <div class="materia-nombre">{{ m.asignatura }}</div>
+        <div class="materia-detalle">
+          <span class="chip-grupo">{{ m.grupoCodigo }}</span>
+          <span class="materia-docente">{{ m.docente }}</span>
+        </div>
+        <div class="materia-franjas">
+          <span *ngFor="let f of m.franjas" class="franja-chip">
+            {{ DIAS_CORTO[f.dia] }} {{ f.horaInicio }}–{{ f.horaFin }}
           </span>
-        </mat-panel-description>
-      </mat-expansion-panel-header>
-
-      <div class="panel-body">
-        <!-- Franjas horarias -->
-        <div class="franjas-row">
-          <span class="section-label">Franjas horarias:</span>
-          <span *ngFor="let f of grupo.franjas" class="franja-chip">{{ franjaLabel(f) }}</span>
-          <span *ngIf="!grupo.franjas.length" class="text-muted">Sin franjas asignadas</span>
-        </div>
-
-        <!-- Estudiantes asignados -->
-        <div *ngIf="grupo.estudiantes.length > 0" class="est-section">
-          <span class="section-label">Estudiantes asignados ({{ grupo.estudiantes.length }}):</span>
-          <div class="codigos-grid">
-            <span *ngFor="let c of grupo.estudiantes" class="codigo-chip">{{ c }}</span>
-          </div>
-        </div>
-        <div *ngIf="grupo.estudiantes.length === 0" class="no-est">
-          <span class="material-icons">info</span>
-          El solver de grupos no asignó estudiantes a este grupo.
         </div>
       </div>
+    </div>
 
-    </mat-expansion-panel>
-  </mat-accordion>
+  </ng-container>
 
 </ng-container>
