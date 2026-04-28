@@ -15,7 +15,7 @@
 
 <ng-container *ngIf="result && !loading">
 
-  <!-- Tarjetas de resumen -->
+  <!-- Tarjetas resumen -->
   <div class="summary-row">
     <mat-card class="summary-card">
       <mat-card-content>
@@ -43,9 +43,70 @@
     </mat-card>
   </div>
 
+  <!-- Barra de filtros -->
+  <div class="filtros-bar">
+    <div class="filtro-search">
+      <span class="material-icons">search</span>
+      <input
+        class="filtro-input"
+        type="text"
+        [(ngModel)]="filtroBusqueda"
+        placeholder="Buscar por docente, asignatura o grupo..." />
+      <button *ngIf="filtroBusqueda" class="btn-clear" (click)="limpiarFiltros()" title="Limpiar">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <label class="toggle-label">
+      <input type="checkbox" [(ngModel)]="soloSinDocente" />
+      Solo sin docente asignado
+    </label>
+    <span class="resultados-count">{{ asignacionesFiltradas.length }} resultado(s)</span>
+  </div>
+
+  <!-- Horario personal del docente seleccionado -->
+  <div *ngIf="docenteSeleccionado" class="docente-schedule-panel">
+    <div class="panel-header">
+      <span class="material-icons">person</span>
+      <span>Horario de <strong>{{ docenteSeleccionado.nombre }}</strong></span>
+      <button class="btn-cerrar" (click)="docenteSeleccionado = null">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="timetable-wrapper" *ngIf="filasDocenteTimetable.length > 0">
+      <table class="timetable">
+        <thead>
+          <tr>
+            <th class="hora-col">Hora</th>
+            <th *ngFor="let dia of diasDocenteTimetable" class="dia-col">{{ DIAS_NOMBRE[dia] }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fila of filasDocenteTimetable">
+            <td class="hora-cell">{{ fila.horaInicio }} – {{ fila.horaFin }}</td>
+            <td *ngFor="let dia of diasDocenteTimetable"
+                class="celda"
+                [class.celda-clase]="fila.celdas[dia] !== null"
+                [class.celda-libre]="fila.celdas[dia] === null">
+              <ng-container *ngIf="fila.celdas[dia] as clase">
+                <div class="clase-bloque">
+                  <span class="clase-asignatura">{{ clase.asignatura }}</span>
+                  <span class="clase-grupo">{{ clase.grupoCodigo }}</span>
+                </div>
+              </ng-container>
+              <span *ngIf="fila.celdas[dia] === null" class="libre-label">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p *ngIf="filasDocenteTimetable.length === 0" class="sin-franjas">
+      Este docente no tiene franjas horarias registradas.
+    </p>
+  </div>
+
   <!-- Tabla de asignaciones -->
-  <div style="overflow-x:auto; margin-top: 16px;">
-    <table mat-table [dataSource]="result.asignaciones" class="docentes-table">
+  <div style="overflow-x:auto; margin-top: 12px;">
+    <table mat-table [dataSource]="asignacionesFiltradas" class="docentes-table">
 
       <ng-container matColumnDef="grupo">
         <th mat-header-cell *matHeaderCellDef>Grupo</th>
@@ -91,9 +152,30 @@
         </td>
       </ng-container>
 
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row">
+          <button
+            *ngIf="row.asignado"
+            class="btn-ver-horario"
+            [class.btn-ver-horario--activo]="docenteSeleccionado?.id === row.docente?.id"
+            (click)="verHorarioDocente(row)"
+            title="Ver horario del docente">
+            <span class="material-icons">calendar_month</span>
+          </button>
+        </td>
+      </ng-container>
+
       <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;" [class.row-sin-docente]="!row.asignado"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+          [class.row-sin-docente]="!row.asignado"
+          [class.row-seleccionado]="docenteSeleccionado?.id === row.docente?.id"></tr>
     </table>
+
+    <div *ngIf="asignacionesFiltradas.length === 0" class="sin-resultados">
+      <span class="material-icons">filter_list_off</span>
+      No hay resultados para los filtros aplicados.
+    </div>
   </div>
 
 </ng-container>

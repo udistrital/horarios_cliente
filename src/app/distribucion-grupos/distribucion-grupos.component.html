@@ -30,8 +30,32 @@
     </mat-card>
   </div>
 
+  <!-- Filtros -->
+  <div class="filtros-bar">
+    <div class="filtro-field">
+      <span class="material-icons">search</span>
+      <input class="filtro-input" type="text" [(ngModel)]="filtroAsignatura"
+             placeholder="Filtrar por asignatura o grupo..." />
+      <button *ngIf="filtroAsignatura" class="btn-clear" (click)="filtroAsignatura = ''">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="filtro-field">
+      <span class="material-icons">person_search</span>
+      <input class="filtro-input" type="text" [(ngModel)]="filtroEstudiante"
+             placeholder="Buscar código de estudiante..." />
+      <button *ngIf="filtroEstudiante" class="btn-clear" (click)="filtroEstudiante = ''">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <span class="resultados-count">{{ gruposFiltrados.length }} grupo(s)</span>
+    <button *ngIf="filtroAsignatura || filtroEstudiante" class="btn-limpiar" (click)="limpiarFiltros()">
+      Limpiar filtros
+    </button>
+  </div>
+
   <mat-accordion multi class="grupos-accordion">
-    <mat-expansion-panel *ngFor="let grupo of grupos" class="grupo-panel">
+    <mat-expansion-panel *ngFor="let grupo of gruposFiltrados" class="grupo-panel">
       <mat-expansion-panel-header>
         <mat-panel-title>
           <span class="panel-codigo">{{ grupo.grupoCodigo }}</span>
@@ -64,5 +88,10 @@
       </div>
     </mat-expansion-panel>
   </mat-accordion>
+
+  <div *ngIf="gruposFiltrados.length === 0" class="sin-resultados">
+    <span class="material-icons">filter_list_off</span>
+    No hay grupos que coincidan con los filtros aplicados.
+  </div>
 
 </ng-container>

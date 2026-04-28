@@ -33,10 +33,34 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
   error: string | null = null;
   hasData = false;
 
+  diasSeleccionados = new Set<number>();
+
+  get diasFiltrados(): number[] {
+    return this.diasSeleccionados.size === 0 ? this.dias : this.dias.filter(d => this.diasSeleccionados.has(d));
+  }
+
+  toggleDia(dia: number): void {
+    if (this.diasSeleccionados.has(dia)) {
+      this.diasSeleccionados.delete(dia);
+    } else {
+      this.diasSeleccionados.add(dia);
+    }
+    this.diasSeleccionados = new Set(this.diasSeleccionados);
+  }
+
+  isDiaActivo(dia: number): boolean {
+    return this.diasSeleccionados.size === 0 || this.diasSeleccionados.has(dia);
+  }
+
+  limpiarFiltroDias(): void {
+    this.diasSeleccionados = new Set<number>();
+  }
+
   readonly DIAS_NOMBRE: Record<number, string> = {
     1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 7: 'Domingo'
   };
 
+  private periodoActual: number | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -46,11 +70,13 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.horarioState.changes()
-      .pipe(
-        filter((id): id is number => id !== null),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(id => this.cargar(id));
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(id => {
+        if (id === null) { this.periodoActual = null; return; }
+        if (id === this.periodoActual) return;
+        this.periodoActual = id;
+        this.cargar(id);
+      });
   }
 
   cargar(periodoId: number): void {
@@ -60,7 +86,12 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
     this.horarioService.resolverDocentes(periodoId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: r => { this.buildGrid(r); this.loading = false; this.hasData = true; },
+        next: r => {
+          this.diasSeleccionados = new Set<number>();
+          this.buildGrid(r);
+          this.loading = false;
+          this.hasData = true;
+        },
         error: () => {
           this.error = 'No se pudo conectar con el backend. Verifique que el servidor esté corriendo en localhost:8081.';
           this.loading = false;

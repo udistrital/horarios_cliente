@@ -27,18 +27,32 @@
     </mat-card-content>
   </mat-card>
 
+  <!-- Filtro por día -->
+  <div class="filtro-dias-bar" *ngIf="filas.length > 0">
+    <span class="filtro-dias-label">Filtrar por día:</span>
+    <button *ngFor="let dia of dias"
+            class="btn-dia"
+            [class.btn-dia--activo]="diasSeleccionados.has(dia)"
+            (click)="toggleDia(dia)">
+      {{ DIAS_NOMBRE[dia] }}
+    </button>
+    <button *ngIf="diasSeleccionados.size > 0" class="btn-limpiar-dias" (click)="limpiarFiltroDias()">
+      Ver todos
+    </button>
+  </div>
+
   <div class="grid-wrapper" *ngIf="filas.length > 0; else sinFranjas">
     <table class="franja-grid">
       <thead>
         <tr>
           <th class="hora-header">Franja horaria</th>
-          <th *ngFor="let dia of dias" class="dia-header">{{ DIAS_NOMBRE[dia] }}</th>
+          <th *ngFor="let dia of diasFiltrados" class="dia-header">{{ DIAS_NOMBRE[dia] }}</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let fila of filas">
           <td class="hora-cell">{{ fila.horaInicio }} – {{ fila.horaFin }}</td>
-          <td *ngFor="let dia of dias"
+          <td *ngFor="let dia of diasFiltrados"
               class="celda"
               [class.celda-ocupada]="isOcupada(fila, dia)"
               [class.celda-libre]="!isOcupada(fila, dia)">

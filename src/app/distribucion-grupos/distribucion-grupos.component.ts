@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { Subject, takeUntil, filter, forkJoin } from 'rxjs';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { HorarioService } from '../services/horario.service';
 import { HorarioStateService } from '../services/horario-state.service';
 import { AsignacionItem, FranjaDTO } from '../models/docente-asignacion.model';
@@ -20,7 +21,7 @@ interface GrupoConEstudiantes {
 @Component({
   selector: 'app-distribucion-grupos',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatProgressSpinnerModule, MatExpansionModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatProgressSpinnerModule, MatExpansionModule],
   templateUrl: './distribucion-grupos.component.html',
   styleUrl: './distribucion-grupos.component.scss',
 })
@@ -31,10 +32,24 @@ export class DistribucionGruposComponent implements OnInit, OnDestroy {
   hasData = false;
   totalEstudiantes = 0;
 
+  filtroAsignatura = '';
+  filtroEstudiante = '';
+
+  get gruposFiltrados(): GrupoConEstudiantes[] {
+    const qa = this.filtroAsignatura.toLowerCase().trim();
+    const qe = this.filtroEstudiante.toLowerCase().trim();
+    return this.grupos.filter(g => {
+      const matchA = !qa || g.asignatura.toLowerCase().includes(qa) || g.grupoCodigo.toLowerCase().includes(qa);
+      const matchE = !qe || g.estudiantes.some(c => c.toLowerCase().includes(qe));
+      return matchA && matchE;
+    });
+  }
+
   readonly DIAS: Record<number, string> = {
     1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb', 7: 'Dom'
   };
 
+  private periodoActual: number | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -44,8 +59,13 @@ export class DistribucionGruposComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.horarioState.changes()
-      .pipe(filter((id): id is number => id !== null), takeUntil(this.destroy$))
-      .subscribe(id => this.cargar(id));
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(id => {
+        if (id === null) { this.periodoActual = null; return; }
+        if (id === this.periodoActual) return;
+        this.periodoActual = id;
+        this.cargar(id);
+      });
   }
 
   cargar(periodoId: number): void {
@@ -76,6 +96,11 @@ export class DistribucionGruposComponent implements OnInit, OnDestroy {
           this.loading = false;
         }
       });
+  }
+
+  limpiarFiltros(): void {
+    this.filtroAsignatura = '';
+    this.filtroEstudiante = '';
   }
 
   franjaLabel(f: FranjaDTO): string {
