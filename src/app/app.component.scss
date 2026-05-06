@@ -8,7 +8,7 @@
   gap: 4px;
   padding: 8px 16px;
   background: #ffffff;
-  border-bottom: 2px solid #004F2D;
+  border-bottom: 2px solid #00599d;
   flex-wrap: wrap;
 }
 
@@ -26,12 +26,12 @@
 
   .material-icons { font-size: 18px; }
 
-  &:hover { background: #e8f5e9; color: #004F2D; }
+  &:hover { background: #e3f0fb; color: #00599d; }
 
   &--active {
-    background: #004F2D;
+    background: #00599d;
     color: #fff;
-    &:hover { background: #00391f; color: #fff; }
+    &:hover { background: #004a85; color: #fff; }
   }
 }
 
@@ -60,11 +60,10 @@
   transition: border-color 0.2s;
 
   &:focus {
-    border-color: #004F2D;
-    box-shadow: 0 0 0 2px rgba(0, 79, 45, 0.15);
+    border-color: #00599d;
+    box-shadow: 0 0 0 2px rgba(0, 89, 157, 0.15);
   }
 
-  /* ocultar flechas del input number */
   &::-webkit-outer-spin-button,
   &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   -moz-appearance: textfield;
@@ -77,7 +76,7 @@
   padding: 6px 14px;
   border: none;
   border-radius: 4px;
-  background: #004F2D;
+  background: #00599d;
   color: #fff;
   font-size: 0.875rem;
   font-weight: 500;
@@ -86,7 +85,7 @@
 
   .material-icons { font-size: 18px; }
 
-  &:hover { background: #00391f; }
+  &:hover { background: #004a85; }
 }
 
 .mf-content { padding: 16px; }

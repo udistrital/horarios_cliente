@@ -1,11 +1,11 @@
 <div *ngIf="!hasData && !loading && !error" class="empty-state">
-  <span class="material-icons">manage_search</span>
-  <p>Ingrese un ID de período académico y presione <strong>Buscar</strong> para ver la disponibilidad de espacios físicos.</p>
+  <span class="material-icons">meeting_room</span>
+  <p>Ingrese un ID de período académico y presione <strong>Buscar</strong> para ver el horario de espacios físicos.</p>
 </div>
 
 <div *ngIf="loading" class="loading-state">
   <mat-spinner diameter="48"></mat-spinner>
-  <p>Cargando asignación de salones...</p>
+  <p>Calculando asignación de salones...</p>
 </div>
 
 <div *ngIf="error" class="error-state">
@@ -15,84 +15,109 @@
 
 <ng-container *ngIf="hasData && !loading">
 
-  <mat-card class="info-card">
-    <mat-card-content>
-      <div class="info-stats">
-        <span class="stat">
-          <span class="material-icons">meeting_room</span>
-          <strong>{{ gruposAsignados }}</strong> / {{ totalGrupos }} grupos con salón asignado
-        </span>
-        <span class="stat stat-warning" *ngIf="gruposSinSalon > 0">
-          <span class="material-icons">warning</span>
-          {{ gruposSinSalon }} sin salón
-        </span>
-      </div>
-      <p class="info-text">
-        <span class="material-icons">info</span>
-        Esta vista muestra qué salón ocupa cada grupo en cada franja horaria del período,
-        según la solución generada por el solver de espacios físicos.
-        <span class="leyenda"><span class="dot dot-ocupada"></span> Ocupada &nbsp;
-        <span class="dot dot-libre"></span> Libre</span>
-      </p>
-    </mat-card-content>
-  </mat-card>
+  <!-- Stats -->
+  <div class="stats-bar">
+    <span class="stat">
+      <span class="material-icons">meeting_room</span>
+      <strong>{{ salones.length }}</strong> espacios con asignación
+    </span>
+    <span class="stat">
+      <span class="material-icons">check_circle</span>
+      <strong>{{ gruposAsignados }}</strong> / {{ totalGrupos }} grupos asignados
+    </span>
+    <span class="stat stat-warn" *ngIf="gruposSinSalon > 0">
+      <span class="material-icons">warning</span>
+      {{ gruposSinSalon }} grupos sin salón
+    </span>
+  </div>
 
-  <!-- Filtro por día -->
-  <div class="filtro-dias-bar" *ngIf="filas.length > 0">
-    <span class="filtro-dias-label">Filtrar por día:</span>
-    <button *ngFor="let dia of dias"
-            class="btn-dia"
-            [class.btn-dia--activo]="diasSeleccionados.has(dia)"
-            (click)="toggleDia(dia)">
-      {{ DIAS_NOMBRE[dia] }}
-    </button>
-    <button *ngIf="diasSeleccionados.size > 0" class="btn-limpiar-dias" (click)="limpiarFiltroDias()">
-      Ver todos
+  <!-- Filtros -->
+  <div class="filtros-bar" *ngIf="salones.length > 0">
+    <div class="filtro-field">
+      <span class="material-icons">search</span>
+      <input class="filtro-input" [(ngModel)]="filtroSalon"
+             placeholder="Código de salón (ej. A-101)...">
+      <button class="btn-clear" *ngIf="filtroSalon" (click)="filtroSalon = ''">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="filtro-field">
+      <span class="material-icons">book</span>
+      <input class="filtro-input" [(ngModel)]="filtroAsignatura"
+             placeholder="Asignatura...">
+      <button class="btn-clear" *ngIf="filtroAsignatura" (click)="filtroAsignatura = ''">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+
+    <div class="dias-filtro">
+      <button *ngFor="let dia of dias"
+              class="btn-dia"
+              [class.btn-dia--activo]="diasSeleccionados.has(dia)"
+              (click)="toggleDia(dia)">
+        {{ DIAS_NOMBRE[dia] }}
+      </button>
+    </div>
+
+    <span class="resultados-count">{{ salonesFiltrados.length }} espacios</span>
+
+    <button class="btn-limpiar"
+            *ngIf="filtroSalon || filtroAsignatura || diasSeleccionados.size > 0"
+            (click)="limpiarFiltros()">
+      Limpiar filtros
     </button>
   </div>
 
-  <div class="grid-wrapper" *ngIf="filas.length > 0; else sinFranjas">
-    <table class="franja-grid">
+  <!-- Grid por salón -->
+  <div class="grid-wrapper" *ngIf="salonesFiltrados.length > 0; else sinResultados">
+    <table class="salon-grid">
       <thead>
         <tr>
-          <th class="hora-header">Franja horaria</th>
-          <th *ngFor="let dia of diasFiltrados" class="dia-header">{{ DIAS_NOMBRE[dia] }}</th>
+          <th class="th-salon">Espacio físico</th>
+          <th *ngFor="let dia of diasFiltrados" class="th-dia">{{ DIAS_NOMBRE[dia] }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let fila of filas">
-          <td class="hora-cell">{{ fila.horaInicio }} – {{ fila.horaFin }}</td>
+        <tr *ngFor="let salon of salonesFiltrados">
+          <td class="salon-info-cell">
+            <div class="salon-codigo">{{ salon.salonCodigo }}</div>
+            <div class="salon-meta" *ngIf="salon.salonTipo">{{ salon.salonTipo }}</div>
+            <div class="salon-meta" *ngIf="salon.salonFacultad">{{ salon.salonFacultad }}</div>
+            <div class="salon-cap">
+              <span class="material-icons">people</span>
+              {{ salon.salonCapacidad }} est.
+            </div>
+          </td>
           <td *ngFor="let dia of diasFiltrados"
               class="celda"
-              [class.celda-ocupada]="isOcupada(fila, dia)"
-              [class.celda-libre]="!isOcupada(fila, dia)">
-            <ng-container *ngIf="isOcupada(fila, dia)">
-              <div *ngFor="let g of fila.celdas[dia]" class="grupo-bloque"
-                   [class.grupo-sin-salon]="!g.asignado">
-                <span class="grupo-codigo">{{ g.codigo }}</span>
-                <span class="grupo-asignatura">{{ g.asignatura }}</span>
-                <span class="grupo-salon" *ngIf="g.asignado">
-                  <span class="material-icons salon-icon">door_front</span>
-                  {{ g.salonCodigo }}
-                  <span *ngIf="g.salonCapacidad">({{ g.salonCapacidad }} est.)</span>
-                </span>
-                <span class="grupo-salon sin-salon-label" *ngIf="!g.asignado">Sin salón</span>
-                <span class="salon-meta" *ngIf="g.asignado && (g.salonTipo || g.salonFacultad)">
-                  {{ g.salonTipo }}<ng-container *ngIf="g.salonTipo && g.salonFacultad"> · </ng-container>{{ g.salonFacultad }}
-                </span>
+              [class.celda-ocupada]="getCelda(salon, dia).length > 0"
+              [class.celda-libre]="getCelda(salon, dia).length === 0">
+            <ng-container *ngIf="getCelda(salon, dia).length > 0; else libreCell">
+              <div *ngFor="let f of getCelda(salon, dia)" class="franja-bloque">
+                <span class="franja-hora">{{ f.horaInicio }} – {{ f.horaFin }}</span>
+                <span class="franja-asig">{{ f.asignatura }}</span>
+                <div class="franja-footer">
+                  <span class="franja-grupo">{{ f.grupoCodigo }}</span>
+                  <span class="franja-est">
+                    <span class="material-icons">group</span>{{ f.cantidadEstudiantes }}
+                  </span>
+                </div>
               </div>
             </ng-container>
-            <span *ngIf="!isOcupada(fila, dia)" class="libre-label">Libre</span>
+            <ng-template #libreCell>
+              <span class="libre-label">—</span>
+            </ng-template>
           </td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <ng-template #sinFranjas>
+  <ng-template #sinResultados>
     <div class="empty-state">
-      <span class="material-icons">calendar_today</span>
-      <p>No se encontraron franjas horarias en los datos del período.</p>
+      <span class="material-icons">search_off</span>
+      <p>No hay espacios que coincidan con los filtros aplicados.</p>
     </div>
   </ng-template>
 

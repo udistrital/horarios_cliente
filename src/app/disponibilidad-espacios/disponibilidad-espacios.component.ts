@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, takeUntil } from 'rxjs';
@@ -7,31 +8,33 @@ import { HorarioService } from '../services/horario.service';
 import { HorarioStateService } from '../services/horario-state.service';
 import { SalonAsignacionResult } from '../models/salon-asignacion.model';
 
-interface GrupoEnFranja {
-  codigo: string;
-  asignatura: string;
-  salonCodigo: string;
-  salonCapacidad: number | null;
-  salonTipo: string | null;
-  salonFacultad: string | null;
-  asignado: boolean;
-}
-
-interface FilaHora {
+interface FranjaOcupada {
   horaInicio: string;
   horaFin: string;
-  celdas: { [dia: number]: GrupoEnFranja[] };
+  grupoCodigo: string;
+  asignatura: string;
+  cantidadEstudiantes: number;
+}
+
+interface FilaSalon {
+  salonId: number;
+  salonCodigo: string;
+  salonCapacidad: number;
+  salonTipo: string | null;
+  salonFacultad: string | null;
+  celdas: { [dia: number]: FranjaOcupada[] };
+  totalFranjas: number;
 }
 
 @Component({
   selector: 'app-disponibilidad-espacios',
   standalone: true,
-  imports: [CommonModule, MatCardModule, MatProgressSpinnerModule],
+  imports: [CommonModule, FormsModule, MatCardModule, MatProgressSpinnerModule],
   templateUrl: './disponibilidad-espacios.component.html',
   styleUrl: './disponibilidad-espacios.component.scss',
 })
 export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
-  filas: FilaHora[] = [];
+  salones: FilaSalon[] = [];
   dias: number[] = [];
   loading = false;
   error: string | null = null;
@@ -41,10 +44,38 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
   gruposAsignados = 0;
   gruposSinSalon = 0;
 
+  filtroSalon = '';
+  filtroAsignatura = '';
   diasSeleccionados = new Set<number>();
 
+  readonly DIAS_NOMBRE: Record<number, string> = {
+    1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 7: 'Domingo'
+  };
+
   get diasFiltrados(): number[] {
-    return this.diasSeleccionados.size === 0 ? this.dias : this.dias.filter(d => this.diasSeleccionados.has(d));
+    return this.diasSeleccionados.size === 0
+      ? this.dias
+      : this.dias.filter(d => this.diasSeleccionados.has(d));
+  }
+
+  get salonesFiltrados(): FilaSalon[] {
+    const termSalon = this.filtroSalon.toLowerCase().trim();
+    const termAsig  = this.filtroAsignatura.toLowerCase().trim();
+
+    return this.salones.filter(s => {
+      if (termSalon && !s.salonCodigo.toLowerCase().includes(termSalon)) return false;
+      if (!termAsig) return true;
+      return Object.values(s.celdas).some(franjas =>
+        franjas.some(f => f.asignatura.toLowerCase().includes(termAsig))
+      );
+    });
+  }
+
+  getCelda(salon: FilaSalon, dia: number): FranjaOcupada[] {
+    const franjas = salon.celdas[dia] ?? [];
+    const termAsig = this.filtroAsignatura.toLowerCase().trim();
+    if (!termAsig) return franjas;
+    return franjas.filter(f => f.asignatura.toLowerCase().includes(termAsig));
   }
 
   toggleDia(dia: number): void {
@@ -56,17 +87,11 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
     this.diasSeleccionados = new Set(this.diasSeleccionados);
   }
 
-  isDiaActivo(dia: number): boolean {
-    return this.diasSeleccionados.size === 0 || this.diasSeleccionados.has(dia);
-  }
-
-  limpiarFiltroDias(): void {
+  limpiarFiltros(): void {
+    this.filtroSalon = '';
+    this.filtroAsignatura = '';
     this.diasSeleccionados = new Set<number>();
   }
-
-  readonly DIAS_NOMBRE: Record<number, string> = {
-    1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 7: 'Domingo'
-  };
 
   private periodoActual: number | null = null;
   private destroy$ = new Subject<void>();
@@ -95,11 +120,11 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: r => {
-          this.diasSeleccionados = new Set<number>();
-          this.totalGrupos = r.totalGrupos;
+          this.totalGrupos     = r.totalGrupos;
           this.gruposAsignados = r.gruposAsignados;
-          this.gruposSinSalon = r.gruposSinSalon;
-          this.buildGrid(r);
+          this.gruposSinSalon  = r.gruposSinSalon;
+          this.limpiarFiltros();
+          this.buildGridPorSalon(r);
           this.loading = false;
           this.hasData = true;
         },
@@ -110,49 +135,44 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
       });
   }
 
-  private buildGrid(result: SalonAsignacionResult): void {
-    const slotSet = new Map<string, { horaInicio: string; horaFin: string }>();
-    const diasSet = new Set<number>();
+  private buildGridPorSalon(result: SalonAsignacionResult): void {
+    const salonMap = new Map<number, FilaSalon>();
+    const diasSet  = new Set<number>();
 
     for (const asig of result.asignaciones) {
+      if (!asig.asignado || !asig.salon) continue;
+
+      if (!salonMap.has(asig.salon.id)) {
+        salonMap.set(asig.salon.id, {
+          salonId:       asig.salon.id,
+          salonCodigo:   asig.salon.codigo,
+          salonCapacidad: asig.salon.capacidad,
+          salonTipo:     asig.salon.tipoSalon,
+          salonFacultad: asig.salon.facultad,
+          celdas:        {},
+          totalFranjas:  0
+        });
+      }
+
+      const fila = salonMap.get(asig.salon.id)!;
+
       for (const f of asig.horarios ?? []) {
-        slotSet.set(`${f.horaInicio}_${f.horaFin}`, { horaInicio: f.horaInicio, horaFin: f.horaFin });
         diasSet.add(f.dia);
+        if (!fila.celdas[f.dia]) fila.celdas[f.dia] = [];
+        fila.celdas[f.dia].push({
+          horaInicio:          f.horaInicio,
+          horaFin:             f.horaFin,
+          grupoCodigo:         asig.grupoCodigo,
+          asignatura:          asig.asignatura ?? '—',
+          cantidadEstudiantes: asig.cantidadEstudiantes
+        });
+        fila.totalFranjas++;
       }
     }
 
-    this.dias = Array.from(diasSet).sort((a, b) => a - b);
-
-    const sortedSlots = Array.from(slotSet.values())
-      .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
-
-    this.filas = sortedSlots.map(slot => {
-      const celdas: { [dia: number]: GrupoEnFranja[] } = {};
-      this.dias.forEach(d => (celdas[d] = []));
-
-      for (const asig of result.asignaciones) {
-        for (const f of asig.horarios ?? []) {
-          if (f.horaInicio === slot.horaInicio && f.horaFin === slot.horaFin) {
-            if (!celdas[f.dia]) celdas[f.dia] = [];
-            celdas[f.dia].push({
-              codigo: asig.grupoCodigo,
-              asignatura: asig.asignatura ?? '—',
-              salonCodigo: asig.salon?.codigo ?? '—',
-              salonCapacidad: asig.salon?.capacidad ?? null,
-              salonTipo: asig.salon?.tipoSalon ?? null,
-              salonFacultad: asig.salon?.facultad ?? null,
-              asignado: asig.asignado
-            });
-          }
-        }
-      }
-
-      return { horaInicio: slot.horaInicio, horaFin: slot.horaFin, celdas };
-    });
-  }
-
-  isOcupada(fila: FilaHora, dia: number): boolean {
-    return (fila.celdas[dia]?.length ?? 0) > 0;
+    this.dias    = Array.from(diasSet).sort((a, b) => a - b);
+    this.salones = Array.from(salonMap.values())
+      .sort((a, b) => a.salonCodigo.localeCompare(b.salonCodigo));
   }
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }

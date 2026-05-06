@@ -55,7 +55,7 @@
   margin-top: 4px;
 }
 
-.summary-card--ok   .summary-value { color: #2e7d32; }
+.summary-card--ok   .summary-value { color: #1565c0; }
 .summary-card--warn .summary-value { color: #e65100; }
 .summary-card--score                { background: #f5f5f5 !important; }
 
@@ -92,13 +92,13 @@ th.mat-mdc-header-cell {
   font-weight: 600;
 }
 
-.estado-ok  { background: #e8f5e9; color: #2e7d32; }
+.estado-ok  { background: #e3f0fb; color: #1565c0; }
 .estado-err { background: #fbe9e7; color: #bf360c; }
 
 .sin-docente { color: #bf360c; font-style: italic; }
 
 .row-sin-docente   { background: #fff8f6; }
-.row-seleccionado  { background: #e8f5e9 !important; }
+.row-seleccionado  { background: #e3f0fb !important; }
 
 /* ── Barra de filtros ── */
 .filtros-bar {
@@ -194,24 +194,24 @@ th.mat-mdc-header-cell {
   .material-icons { font-size: 18px; }
 
   &:hover {
-    background: #e8f5e9;
-    color: #2e7d32;
-    border-color: #a5d6a7;
+    background: #e3f0fb;
+    color: #1565c0;
+    border-color: #90c1e0;
   }
 }
 
 .btn-ver-horario--activo {
-  background: #2e7d32 !important;
+  background: #1565c0 !important;
   color: #fff !important;
-  border-color: #2e7d32 !important;
+  border-color: #1565c0 !important;
 }
 
 /* ── Panel horario personal del docente ── */
 .docente-schedule-panel {
   margin: 12px 0;
-  border: 1px solid #a5d6a7;
+  border: 1px solid #90c1e0;
   border-radius: 8px;
-  background: #f9fef9;
+  background: #f0f7ff;
   overflow: hidden;
 }
 
@@ -220,7 +220,7 @@ th.mat-mdc-header-cell {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: #004F2D;
+  background: #00599d;
   color: #fff;
   font-size: 0.9rem;
 
@@ -256,12 +256,12 @@ th.mat-mdc-header-cell {
   min-width: 400px;
 
   thead th {
-    background: #004F2D;
+    background: #00599d;
     color: #fff;
     padding: 8px 12px;
     font-weight: 600;
     text-align: center;
-    border: 1px solid #003d22;
+    border: 1px solid #003d7a;
     white-space: nowrap;
   }
 
@@ -285,20 +285,20 @@ th.mat-mdc-header-cell {
   min-height: 40px;
 }
 
-.celda-clase { background: #e8f5e9; }
+.celda-clase { background: #e3f0fb; }
 .celda-libre { background: #fafafa; }
 
 .clase-bloque {
   display: flex;
   flex-direction: column;
   padding: 3px 6px;
-  border-left: 3px solid #004F2D;
+  border-left: 3px solid #00599d;
   border-radius: 0 4px 4px 0;
   background: #fff;
 }
 
 .clase-asignatura { font-size: 0.75rem; color: #333; font-weight: 600; }
-.clase-grupo      { font-size: 0.7rem; color: #004F2D; }
+.clase-grupo      { font-size: 0.7rem; color: #00599d; }
 
 .libre-label { color: #ccc; font-size: 0.75rem; }
 
