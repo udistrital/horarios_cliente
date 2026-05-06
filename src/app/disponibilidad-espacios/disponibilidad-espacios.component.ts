@@ -2,15 +2,19 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Subject, takeUntil, filter } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { HorarioService } from '../services/horario.service';
 import { HorarioStateService } from '../services/horario-state.service';
-import { DocenteAsignacionResult } from '../models/docente-asignacion.model';
+import { SalonAsignacionResult } from '../models/salon-asignacion.model';
 
 interface GrupoEnFranja {
   codigo: string;
   asignatura: string;
-  docente: string;
+  salonCodigo: string;
+  salonCapacidad: number | null;
+  salonTipo: string | null;
+  salonFacultad: string | null;
+  asignado: boolean;
 }
 
 interface FilaHora {
@@ -32,6 +36,10 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   hasData = false;
+
+  totalGrupos = 0;
+  gruposAsignados = 0;
+  gruposSinSalon = 0;
 
   diasSeleccionados = new Set<number>();
 
@@ -83,11 +91,14 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     this.hasData = false;
-    this.horarioService.resolverDocentes(periodoId)
+    this.horarioService.resolverSalones(periodoId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: r => {
           this.diasSeleccionados = new Set<number>();
+          this.totalGrupos = r.totalGrupos;
+          this.gruposAsignados = r.gruposAsignados;
+          this.gruposSinSalon = r.gruposSinSalon;
           this.buildGrid(r);
           this.loading = false;
           this.hasData = true;
@@ -99,7 +110,7 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
       });
   }
 
-  private buildGrid(result: DocenteAsignacionResult): void {
+  private buildGrid(result: SalonAsignacionResult): void {
     const slotSet = new Map<string, { horaInicio: string; horaFin: string }>();
     const diasSet = new Set<number>();
 
@@ -126,9 +137,11 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
             celdas[f.dia].push({
               codigo: asig.grupoCodigo,
               asignatura: asig.asignatura ?? '—',
-              docente: asig.docente
-                ? `${asig.docente.nombre} ${asig.docente.apellido}`
-                : 'Sin docente'
+              salonCodigo: asig.salon?.codigo ?? '—',
+              salonCapacidad: asig.salon?.capacidad ?? null,
+              salonTipo: asig.salon?.tipoSalon ?? null,
+              salonFacultad: asig.salon?.facultad ?? null,
+              asignado: asig.asignado
             });
           }
         }

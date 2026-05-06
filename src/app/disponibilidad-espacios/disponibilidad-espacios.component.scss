@@ -167,5 +167,55 @@
 
 .grupo-codigo    { font-weight: 700; font-size: 0.78rem; color: #004F2D; }
 .grupo-asignatura { font-size: 0.75rem; color: #333; }
-.grupo-docente   { font-size: 0.7rem; color: #777; font-style: italic; }
 .libre-label     { color: #bbb; font-size: 0.75rem; }
+
+.grupo-salon {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #1565c0;
+  font-weight: 600;
+  margin-top: 2px;
+
+  .salon-icon { font-size: 13px; }
+}
+
+.sin-salon-label {
+  color: #e65100 !important;
+  font-style: italic;
+  font-weight: 400 !important;
+}
+
+.salon-meta {
+  font-size: 0.68rem;
+  color: #888;
+}
+
+.grupo-sin-salon {
+  border-left-color: #e65100;
+}
+
+/* ── Stats en la info card ── */
+.info-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #444;
+
+  .material-icons { font-size: 18px; color: #004F2D; }
+}
+
+.stat-warning {
+  color: #e65100;
+  .material-icons { color: #e65100; }
+}
