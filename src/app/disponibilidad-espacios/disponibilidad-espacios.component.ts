@@ -13,7 +13,6 @@ interface FranjaOcupada {
   horaFin: string;
   grupoCodigo: string;
   asignatura: string;
-  cantidadEstudiantes: number;
 }
 
 interface FilaSalon {
@@ -160,11 +159,10 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
         diasSet.add(f.dia);
         if (!fila.celdas[f.dia]) fila.celdas[f.dia] = [];
         fila.celdas[f.dia].push({
-          horaInicio:          f.horaInicio,
-          horaFin:             f.horaFin,
-          grupoCodigo:         asig.grupoCodigo,
-          asignatura:          asig.asignatura ?? '—',
-          cantidadEstudiantes: asig.cantidadEstudiantes
+          horaInicio:  f.horaInicio,
+          horaFin:     f.horaFin,
+          grupoCodigo: asig.grupoCodigo,
+          asignatura:  asig.asignatura ?? '—'
         });
         fila.totalFranjas++;
       }

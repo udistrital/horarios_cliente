@@ -97,17 +97,10 @@
               <div *ngFor="let f of getCelda(salon, dia)" class="franja-bloque">
                 <span class="franja-hora">{{ f.horaInicio }} – {{ f.horaFin }}</span>
                 <span class="franja-asig">{{ f.asignatura }}</span>
-                <div class="franja-footer">
-                  <span class="franja-grupo">{{ f.grupoCodigo }}</span>
-                  <span class="franja-est">
-                    <span class="material-icons">group</span>{{ f.cantidadEstudiantes }}
-                  </span>
-                </div>
+                <span class="franja-grupo">{{ f.grupoCodigo }}</span>
               </div>
             </ng-container>
-            <ng-template #libreCell>
-              <span class="libre-label">—</span>
-            </ng-template>
+            <ng-template #libreCell></ng-template>
           </td>
         </tr>
       </tbody>
