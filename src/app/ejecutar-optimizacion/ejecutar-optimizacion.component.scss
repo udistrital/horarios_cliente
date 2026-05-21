@@ -351,6 +351,75 @@
   text-align: center;
 }
 
+/* ── Tabla de detalle dentro de la vista previa ── */
+.preview-detail {
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid #d0e4f5;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+
+  th {
+    position: sticky;
+    top: 0;
+    background: #e3f0fb;
+    color: #00599d;
+    font-weight: 600;
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #b3d1f0;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+
+    &:first-child { white-space: nowrap; }
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  tr.row-sin-asignar td { background: #fff8f0; }
+}
+
+.sin-asignar-tag {
+  color: #e65100;
+  font-style: italic;
+  font-size: 0.75rem;
+}
+
+.cap-col {
+  text-align: right;
+  color: #666;
+  white-space: nowrap;
+}
+
+.detalle-nota {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.78rem;
+  color: #666;
+  font-style: italic;
+  line-height: 1.4;
+
+  .material-icons { font-size: 15px; color: #90a4ae; flex-shrink: 0; }
+}
+
+/* Tarjeta con tabla expandida usa flex full-width */
+.solver-card--expanded {
+  grid-column: span 1;
+}
+
 .guardado-banner {
   display: flex;
   align-items: center;

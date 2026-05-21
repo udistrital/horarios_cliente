@@ -71,7 +71,7 @@
   <div class="solvers-grid">
 
     <!-- ── Solver Docentes ── -->
-    <div class="solver-card">
+    <div class="solver-card" [class.solver-card--expanded]="faseDocentes === 'preview' || faseDocentes === 'guardando' || faseDocentes === 'guardado'">
       <div class="solver-card-header solver-card-header--docentes">
         <span class="material-icons">person</span>
         <h3>Solver Docentes</h3>
@@ -99,12 +99,15 @@
       <!-- Vista previa del resultado -->
       <div class="preview-section"
         *ngIf="faseDocentes === 'preview' || faseDocentes === 'guardando' || faseDocentes === 'guardado'">
+
         <div class="preview-header">
           <span class="material-icons">preview</span>
           <span>Vista previa del resultado</span>
           <span class="badge-preview" *ngIf="faseDocentes === 'preview'">Sin guardar</span>
           <span class="badge-guardado" *ngIf="faseDocentes === 'guardado'">Guardado</span>
         </div>
+
+        <!-- Stats resumen -->
         <div class="preview-stats" *ngIf="previewDocentes">
           <div class="stat-item stat-ok">
             <span class="stat-num">{{ previewDocentes.gruposAsignados }}</span>
@@ -119,6 +122,31 @@
             <span class="stat-label">Total grupos</span>
           </div>
         </div>
+
+        <!-- Tabla de detalle de asignaciones -->
+        <div class="preview-detail" *ngIf="previewDocentes?.asignaciones?.length">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>Grupo</th>
+                <th>Asignatura</th>
+                <th>Docente asignado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of previewDocentes!.asignaciones"
+                  [class.row-sin-asignar]="!a.asignado">
+                <td><strong>{{ a.grupoCodigo }}</strong></td>
+                <td>{{ a.asignatura ?? '—' }}</td>
+                <td>
+                  <span *ngIf="a.docente">{{ a.docente.nombre }} {{ a.docente.apellido }}</span>
+                  <span *ngIf="!a.docente" class="sin-asignar-tag">Sin docente disponible</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div class="guardado-banner" *ngIf="faseDocentes === 'guardado'">
           <span class="material-icons">check_circle</span>
           Resultado guardado correctamente en la base de datos.
@@ -150,7 +178,7 @@
     </div>
 
     <!-- ── Solver Salones ── -->
-    <div class="solver-card">
+    <div class="solver-card" [class.solver-card--expanded]="faseSalones === 'preview' || faseSalones === 'guardando' || faseSalones === 'guardado'">
       <div class="solver-card-header solver-card-header--salones">
         <span class="material-icons">meeting_room</span>
         <h3>Solver Salones</h3>
@@ -176,12 +204,14 @@
 
       <div class="preview-section"
         *ngIf="faseSalones === 'preview' || faseSalones === 'guardando' || faseSalones === 'guardado'">
+
         <div class="preview-header">
           <span class="material-icons">preview</span>
           <span>Vista previa del resultado</span>
           <span class="badge-preview" *ngIf="faseSalones === 'preview'">Sin guardar</span>
           <span class="badge-guardado" *ngIf="faseSalones === 'guardado'">Guardado</span>
         </div>
+
         <div class="preview-stats" *ngIf="previewSalones">
           <div class="stat-item stat-ok">
             <span class="stat-num">{{ previewSalones.gruposAsignados }}</span>
@@ -196,6 +226,33 @@
             <span class="stat-label">Total grupos</span>
           </div>
         </div>
+
+        <!-- Tabla de detalle de asignaciones -->
+        <div class="preview-detail" *ngIf="previewSalones?.asignaciones?.length">
+          <table class="detail-table">
+            <thead>
+              <tr>
+                <th>Grupo</th>
+                <th>Asignatura</th>
+                <th>Salón asignado</th>
+                <th>Cap.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of previewSalones!.asignaciones"
+                  [class.row-sin-asignar]="!a.asignado">
+                <td><strong>{{ a.grupoCodigo }}</strong></td>
+                <td>{{ a.asignatura ?? '—' }}</td>
+                <td>
+                  <span *ngIf="a.salon">{{ a.salon.codigo }}</span>
+                  <span *ngIf="!a.salon" class="sin-asignar-tag">Sin salón disponible</span>
+                </td>
+                <td class="cap-col">{{ a.salon?.capacidad ?? '—' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <div class="guardado-banner" *ngIf="faseSalones === 'guardado'">
           <span class="material-icons">check_circle</span>
           Resultado guardado correctamente en la base de datos.
@@ -225,7 +282,7 @@
     </div>
 
     <!-- ── Solver Estudiantes ── -->
-    <div class="solver-card">
+    <div class="solver-card" [class.solver-card--expanded]="faseEstudiantes === 'preview' || faseEstudiantes === 'guardando' || faseEstudiantes === 'guardado'">
       <div class="solver-card-header solver-card-header--estudiantes">
         <span class="material-icons">school</span>
         <h3>Solver Estudiantes</h3>
@@ -251,12 +308,14 @@
 
       <div class="preview-section"
         *ngIf="faseEstudiantes === 'preview' || faseEstudiantes === 'guardando' || faseEstudiantes === 'guardado'">
+
         <div class="preview-header">
           <span class="material-icons">preview</span>
           <span>Vista previa del resultado</span>
           <span class="badge-preview" *ngIf="faseEstudiantes === 'preview'">Sin guardar</span>
           <span class="badge-guardado" *ngIf="faseEstudiantes === 'guardado'">Guardado</span>
         </div>
+
         <div class="preview-stats" *ngIf="previewEstudiantes">
           <div class="stat-item stat-ok">
             <span class="stat-num">{{ previewEstudiantes.asignadas }}</span>
@@ -271,6 +330,13 @@
             <span class="stat-label">Total</span>
           </div>
         </div>
+
+        <p class="detalle-nota">
+          <span class="material-icons">info</span>
+          Para ver el detalle por estudiante, consulte la vista
+          <strong>Distribución de Grupos</strong> después de guardar.
+        </p>
+
         <div class="guardado-banner" *ngIf="faseEstudiantes === 'guardado'">
           <span class="material-icons">check_circle</span>
           Resultado guardado correctamente en la base de datos.

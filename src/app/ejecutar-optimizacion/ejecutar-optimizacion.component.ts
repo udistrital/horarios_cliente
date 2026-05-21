@@ -87,7 +87,6 @@ export class EjecutarOptimizacionComponent implements OnInit, OnDestroy {
     if (!this.periodoSeleccionado) return;
     this.loadingEstado = true;
     this.estadoCargado = false;
-    this.horarioService.clearCache();
 
     forkJoin({
       grupos: this.horarioService.getGruposPorPeriodo(this.periodoSeleccionado),
@@ -166,7 +165,7 @@ export class EjecutarOptimizacionComponent implements OnInit, OnDestroy {
     this.horarioService.aplicarDocentes(this.periodoSeleccionado)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => { this.faseDocentes = 'guardado'; this.cargarEstado(); },
+        next: () => { this.faseDocentes = 'guardado'; this.horarioService.clearCache(); this.cargarEstado(); },
         error: () => { this.errorDocentes = 'Error al guardar los docentes. El cálculo puede haber expirado; vuelva a calcular.'; this.faseDocentes = 'error'; }
       });
   }
@@ -177,7 +176,7 @@ export class EjecutarOptimizacionComponent implements OnInit, OnDestroy {
     this.horarioService.aplicarSalones(this.periodoSeleccionado)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => { this.faseSalones = 'guardado'; this.cargarEstado(); },
+        next: () => { this.faseSalones = 'guardado'; this.horarioService.clearCache(); this.cargarEstado(); },
         error: () => { this.errorSalones = 'Error al guardar los salones. El cálculo puede haber expirado; vuelva a calcular.'; this.faseSalones = 'error'; }
       });
   }
@@ -188,7 +187,7 @@ export class EjecutarOptimizacionComponent implements OnInit, OnDestroy {
     this.horarioService.aplicarEstudiantes(this.periodoSeleccionado)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => { this.faseEstudiantes = 'guardado'; this.cargarEstado(); },
+        next: () => { this.faseEstudiantes = 'guardado'; this.horarioService.clearCache(); this.cargarEstado(); },
         error: () => { this.errorEstudiantes = 'Error al guardar los estudiantes. El cálculo puede haber expirado; vuelva a calcular.'; this.faseEstudiantes = 'error'; }
       });
   }
