@@ -41,7 +41,7 @@ export class HorarioDocentesComponent implements OnInit, OnDestroy {
   filasDocenteTimetable: FilaDocenteTimetable[] = [];
   diasDocenteTimetable: number[] = [];
 
-  readonly displayedColumns = ['grupo', 'asignatura', 'docente', 'vinculacion', 'area', 'franjas', 'estado', 'acciones'];
+  readonly displayedColumns = ['grupo', 'asignatura', 'docente', 'vinculacion', 'franjas', 'estado', 'acciones'];
 
   readonly DIAS: Record<number, string> = {
     1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb', 7: 'Dom'

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, shareReplay, switchMap } from 'rxjs';
+import { Observable, shareReplay } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { DocenteAsignacionResult } from '../models/docente-asignacion.model';
 import { SalonAsignacionResult } from '../models/salon-asignacion.model';
@@ -50,42 +50,32 @@ export class HorarioService {
     return this.periodosReq;
   }
 
-  // ─── Ejecución de solvers (resolver → aplicar en secuencia) ─────────────
+  // ─── Paso 1: calcular (OptaPlanner corre y guarda en caché de memoria) ──
 
-  resolverYAplicarDocentes(periodoId: number): Observable<DocenteAsignacionResult> {
-    return this.http
-      .get<DocenteAsignacionResult>(`${this.base}/solver-docente/resolver/${periodoId}`)
-      .pipe(
-        switchMap(() =>
-          this.http.post<DocenteAsignacionResult>(
-            `${this.base}/solver-docente/aplicar/${periodoId}`, {}
-          )
-        )
-      );
+  resolverDocentes(periodoId: number): Observable<DocenteAsignacionResult> {
+    return this.http.get<DocenteAsignacionResult>(`${this.base}/solver-docente/resolver/${periodoId}`);
   }
 
-  resolverYAplicarSalones(periodoId: number): Observable<SalonAsignacionResult> {
-    return this.http
-      .get<SalonAsignacionResult>(`${this.base}/solver-salon/resolver/${periodoId}`)
-      .pipe(
-        switchMap(() =>
-          this.http.post<SalonAsignacionResult>(
-            `${this.base}/solver-salon/aplicar/${periodoId}`, {}
-          )
-        )
-      );
+  resolverSalones(periodoId: number): Observable<SalonAsignacionResult> {
+    return this.http.get<SalonAsignacionResult>(`${this.base}/solver-salon/resolver/${periodoId}`);
   }
 
-  resolverYAplicarEstudiantes(periodoId: number): Observable<EstudianteAsignacionResult> {
-    return this.http
-      .get<EstudianteAsignacionResult>(`${this.base}/solver/resolver/${periodoId}`)
-      .pipe(
-        switchMap(() =>
-          this.http.post<EstudianteAsignacionResult>(
-            `${this.base}/solver/aplicar/${periodoId}`, {}
-          )
-        )
-      );
+  resolverEstudiantes(periodoId: number): Observable<EstudianteAsignacionResult> {
+    return this.http.get<EstudianteAsignacionResult>(`${this.base}/solver/resolver/${periodoId}`);
+  }
+
+  // ─── Paso 2: guardar (lee caché, persiste en BD, limpia caché) ───────────
+
+  aplicarDocentes(periodoId: number): Observable<DocenteAsignacionResult> {
+    return this.http.post<DocenteAsignacionResult>(`${this.base}/solver-docente/aplicar/${periodoId}`, {});
+  }
+
+  aplicarSalones(periodoId: number): Observable<SalonAsignacionResult> {
+    return this.http.post<SalonAsignacionResult>(`${this.base}/solver-salon/aplicar/${periodoId}`, {});
+  }
+
+  aplicarEstudiantes(periodoId: number): Observable<EstudianteAsignacionResult> {
+    return this.http.post<EstudianteAsignacionResult>(`${this.base}/solver/aplicar/${periodoId}`, {});
   }
 
   clearCache(): void {

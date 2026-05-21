@@ -95,6 +95,54 @@
   p { margin: 0; font-size: 0.9rem; }
 }
 
+/* ── Barra de acciones globales ── */
+.acciones-globales {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: #f0f7ff;
+  border: 1px solid #b3d1f0;
+  border-radius: 8px;
+}
+
+.btn-calcular-todos, .btn-guardar-todos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  .material-icons { font-size: 18px; }
+
+  &:disabled { background: #b0bec5; color: #fff; cursor: not-allowed; }
+}
+
+.btn-calcular-todos {
+  background: #00599d;
+  color: #fff;
+  &:hover:not(:disabled) { background: #004a85; }
+}
+
+.btn-guardar-todos {
+  background: #1b5e20;
+  color: #fff;
+  &:hover:not(:disabled) { background: #145214; }
+}
+
+.acciones-hint {
+  font-size: 0.8rem;
+  color: #888;
+  font-style: italic;
+}
+
 /* ── Grid de solvers ── */
 .solvers-grid {
   display: grid;
@@ -225,8 +273,121 @@
   .material-icons { font-size: 16px; flex-shrink: 0; }
 }
 
-/* ── Botón ejecutar ── */
-.btn-ejecutar {
+/* ── Vista previa ── */
+.preview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 16px;
+  padding: 12px;
+  background: #f0f7ff;
+  border: 1px solid #90c1e0;
+  border-radius: 8px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #00599d;
+
+  .material-icons { font-size: 18px; }
+}
+
+.badge-preview {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #fff3e0;
+  color: #e65100;
+  border: 1px solid #ffcc80;
+}
+
+.badge-guardado {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+}
+
+.preview-stats {
+  display: flex;
+  gap: 10px;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 6px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+
+  &.stat-ok  { border-color: #90c1e0; background: #e3f0fb; }
+  &.stat-warn { border-color: #ffcc80; background: #fff8e1; }
+}
+
+.stat-num {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #00599d;
+
+  .stat-warn & { color: #e65100; }
+}
+
+.stat-label {
+  font-size: 0.72rem;
+  color: #777;
+  text-align: center;
+}
+
+.guardado-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: #1b5e20;
+
+  .material-icons { font-size: 16px; }
+}
+
+.btn-guardar-solver {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #1b5e20;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  .material-icons { font-size: 16px; }
+
+  &:hover:not(:disabled) { background: #145214; }
+  &:disabled { background: #b0bec5; cursor: not-allowed; }
+}
+
+/* ── Botón calcular ── */
+.btn-calcular {
   display: flex;
   align-items: center;
   justify-content: center;
