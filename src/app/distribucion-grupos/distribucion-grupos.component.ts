@@ -7,7 +7,7 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { HorarioService } from '../services/horario.service';
 import { HorarioStateService } from '../services/horario-state.service';
-import { AsignacionItem, FranjaDTO } from '../models/docente-asignacion.model';
+import { FranjaDTO } from '../models/grupo-resumen.model';
 
 interface GrupoConEstudiantes {
   grupoId: number;
@@ -72,21 +72,35 @@ export class DistribucionGruposComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     this.hasData = false;
+
     forkJoin({
-      docentes: this.horarioService.resolverDocentes(periodoId),
-      estudiantes: this.horarioService.resultadoEstudiantes(periodoId)
+      grupos:          this.horarioService.getGruposPorPeriodo(periodoId),
+      preinscripciones: this.horarioService.getPreinscripcionesPorPeriodo(periodoId)
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ docentes, estudiantes }) => {
-          this.grupos = docentes.asignaciones.map((a: AsignacionItem) => ({
-            grupoId: a.grupoId,
-            grupoCodigo: a.grupoCodigo,
-            asignatura: a.asignatura ?? '—',
-            docente: a.docente ? `${a.docente.nombre} ${a.docente.apellido}` : 'Sin docente asignado',
-            franjas: a.horarios ?? [],
-            estudiantes: estudiantes[a.grupoId] ?? []
+        next: ({ grupos, preinscripciones }) => {
+          // Construir mapa grupoId → [codigoEstudiante]
+          const estudiantesPorGrupo = new Map<number, string[]>();
+          for (const p of preinscripciones) {
+            if (p.asignado && p.grupo) {
+              const lista = estudiantesPorGrupo.get(p.grupo.id) ?? [];
+              lista.push(p.codigoEstudiante);
+              estudiantesPorGrupo.set(p.grupo.id, lista);
+            }
+          }
+
+          this.grupos = grupos.map(g => ({
+            grupoId:     g.id,
+            grupoCodigo: g.codigo,
+            asignatura:  g.asignatura ?? '—',
+            docente:     g.docente
+                           ? `${g.docente.nombre} ${g.docente.apellido}`
+                           : 'Sin docente asignado',
+            franjas:     g.horarios ?? [],
+            estudiantes: estudiantesPorGrupo.get(g.id) ?? []
           }));
+
           this.totalEstudiantes = this.grupos.reduce((s, g) => s + g.estudiantes.length, 0);
           this.loading = false;
           this.hasData = true;

@@ -6,7 +6,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, takeUntil } from 'rxjs';
 import { HorarioService } from '../services/horario.service';
 import { HorarioStateService } from '../services/horario-state.service';
-import { SalonAsignacionResult } from '../models/salon-asignacion.model';
+import { GrupoResumenDTO } from '../models/grupo-resumen.model';
 
 interface FranjaOcupada {
   horaInicio: string;
@@ -39,9 +39,11 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
   error: string | null = null;
   hasData = false;
 
-  totalGrupos = 0;
-  gruposAsignados = 0;
-  gruposSinSalon = 0;
+  private gruposData: GrupoResumenDTO[] = [];
+
+  get totalGrupos()    { return this.gruposData.length; }
+  get gruposAsignados(){ return this.gruposData.filter(g => g.salon).length; }
+  get gruposSinSalon() { return this.gruposData.filter(g => !g.salon).length; }
 
   filtroSalon = '';
   filtroAsignatura = '';
@@ -115,15 +117,13 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
     this.hasData = false;
-    this.horarioService.resolverSalones(periodoId)
+    this.horarioService.getGruposPorPeriodo(periodoId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: r => {
-          this.totalGrupos     = r.totalGrupos;
-          this.gruposAsignados = r.gruposAsignados;
-          this.gruposSinSalon  = r.gruposSinSalon;
+        next: grupos => {
+          this.gruposData = grupos;
           this.limpiarFiltros();
-          this.buildGridPorSalon(r);
+          this.buildGrid(grupos);
           this.loading = false;
           this.hasData = true;
         },
@@ -134,35 +134,35 @@ export class DisponibilidadEspaciosComponent implements OnInit, OnDestroy {
       });
   }
 
-  private buildGridPorSalon(result: SalonAsignacionResult): void {
+  private buildGrid(grupos: GrupoResumenDTO[]): void {
     const salonMap = new Map<number, FilaSalon>();
     const diasSet  = new Set<number>();
 
-    for (const asig of result.asignaciones) {
-      if (!asig.asignado || !asig.salon) continue;
+    for (const g of grupos) {
+      if (!g.salon) continue;
 
-      if (!salonMap.has(asig.salon.id)) {
-        salonMap.set(asig.salon.id, {
-          salonId:       asig.salon.id,
-          salonCodigo:   asig.salon.codigo,
-          salonCapacidad: asig.salon.capacidad,
-          salonTipo:     asig.salon.tipoSalon,
-          salonFacultad: asig.salon.facultad,
-          celdas:        {},
-          totalFranjas:  0
+      if (!salonMap.has(g.salon.id)) {
+        salonMap.set(g.salon.id, {
+          salonId:        g.salon.id,
+          salonCodigo:    g.salon.codigo,
+          salonCapacidad: g.salon.capacidad,
+          salonTipo:      null,
+          salonFacultad:  null,
+          celdas:         {},
+          totalFranjas:   0
         });
       }
 
-      const fila = salonMap.get(asig.salon.id)!;
+      const fila = salonMap.get(g.salon.id)!;
 
-      for (const f of asig.horarios ?? []) {
+      for (const f of g.horarios ?? []) {
         diasSet.add(f.dia);
         if (!fila.celdas[f.dia]) fila.celdas[f.dia] = [];
         fila.celdas[f.dia].push({
           horaInicio:  f.horaInicio,
           horaFin:     f.horaFin,
-          grupoCodigo: asig.grupoCodigo,
-          asignatura:  asig.asignatura ?? '—'
+          grupoCodigo: g.codigo,
+          asignatura:  g.asignatura ?? '—'
         });
         fila.totalFranjas++;
       }

@@ -88,4 +88,32 @@
   &:hover { background: #004a85; }
 }
 
+.mf-nav-link--exec {
+  border: 1px solid #00599d;
+  color: #00599d;
+  &:hover { background: #e3f0fb; }
+  &.mf-nav-link--active {
+    background: #00599d;
+    color: #fff;
+    border-color: #00599d;
+  }
+}
+
+.periodo-select {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  outline: none;
+  min-width: 140px;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  background: #fff;
+
+  &:focus {
+    border-color: #00599d;
+    box-shadow: 0 0 0 2px rgba(0, 89, 157, 0.15);
+  }
+}
+
 .mf-content { padding: 16px; }

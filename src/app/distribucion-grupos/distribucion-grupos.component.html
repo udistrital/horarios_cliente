@@ -1,11 +1,11 @@
 <div *ngIf="!hasData && !loading && !error" class="empty-state">
   <span class="material-icons">manage_search</span>
-  <p>Ingrese un ID de período académico y presione <strong>Buscar</strong> para ver la distribución de estudiantes por grupo.</p>
+  <p>Seleccione un período académico para ver la distribución de estudiantes por grupo.</p>
 </div>
 
 <div *ngIf="loading" class="loading-state">
   <mat-spinner diameter="48"></mat-spinner>
-  <p>Ejecutando solvers... esto puede tardar unos segundos.</p>
+  <p>Cargando datos del período...</p>
 </div>
 
 <div *ngIf="error" class="error-state">

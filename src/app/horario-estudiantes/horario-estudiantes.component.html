@@ -1,13 +1,13 @@
 <!-- Estado: sin período -->
 <div *ngIf="!datosListos && !loading && !error" class="empty-state">
   <span class="material-icons">manage_search</span>
-  <p>Ingrese un ID de período académico y presione <strong>Buscar</strong> para habilitar la búsqueda de horarios.</p>
+  <p>Seleccione un período académico para habilitar la búsqueda de horarios de estudiantes.</p>
 </div>
 
-<!-- Estado: cargando solvers -->
+<!-- Estado: cargando datos -->
 <div *ngIf="loading" class="loading-state">
   <mat-spinner diameter="48"></mat-spinner>
-  <p>Ejecutando solvers de docentes y grupos... esto puede tardar unos segundos.</p>
+  <p>Cargando datos del período...</p>
 </div>
 
 <!-- Estado: error -->

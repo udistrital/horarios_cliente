@@ -17,22 +17,24 @@
       <span class="material-icons">groups</span>
       Distribución de Grupos
     </a>
+    <a class="mf-nav-link mf-nav-link--exec" [routerLink]="['ejecutar-optimizacion']" routerLinkActive="mf-nav-link--active">
+      <span class="material-icons">play_circle</span>
+      Ejecutar Optimización
+    </a>
 
     <span class="mf-nav-spacer"></span>
 
     <div class="periodo-control">
-      <label class="periodo-label">Período académico ID:</label>
-      <input
-        class="periodo-input"
-        type="number"
+      <label class="periodo-label">Período:</label>
+      <select
+        class="periodo-select"
         [(ngModel)]="periodoId"
-        placeholder="Ej: 1"
-        min="1"
-        (keydown)="onKeydown($event)" />
-      <button class="btn-buscar" (click)="aplicarPeriodo()">
-        <span class="material-icons">search</span>
-        Buscar
-      </button>
+        (change)="aplicarPeriodo()">
+        <option [ngValue]="null" disabled>Seleccione...</option>
+        <option *ngFor="let p of periodos" [ngValue]="p.id">
+          {{ p.anio }}-{{ p.semestre }}
+        </option>
+      </select>
     </div>
   </nav>
 

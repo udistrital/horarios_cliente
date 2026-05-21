@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Subject, takeUntil, filter, forkJoin } from 'rxjs';
+import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { HorarioService } from '../services/horario.service';
 import { HorarioStateService } from '../services/horario-state.service';
-import { DocenteAsignacionResult, AsignacionItem, FranjaDTO } from '../models/docente-asignacion.model';
+import { GrupoResumenDTO, FranjaDTO } from '../models/grupo-resumen.model';
+import { PreinscripcionResumenDTO } from '../models/preinscripcion-resumen.model';
 
 interface CeldaHorario {
   asignatura: string;
@@ -35,16 +36,13 @@ interface MateriaResumen {
   styleUrl: './horario-estudiantes.component.scss',
 })
 export class HorarioEstudiantesComponent implements OnInit, OnDestroy {
-  // Estado de carga
   loading = false;
   error: string | null = null;
   datosListos = false;
 
-  // Búsqueda
   codigoInput = '';
   codigoBuscado = '';
 
-  // Resultados del estudiante
   materias: MateriaResumen[] = [];
   filasTimetable: FilaTimetable[] = [];
   dias: number[] = [];
@@ -57,10 +55,10 @@ export class HorarioEstudiantesComponent implements OnInit, OnDestroy {
     1: 'Lun', 2: 'Mar', 3: 'Mié', 4: 'Jue', 5: 'Vie', 6: 'Sáb', 7: 'Dom'
   };
 
-  // Datos crudos de los solvers (para filtrar sin re-llamar)
-  private docenteResult: DocenteAsignacionResult | null = null;
-  private estudiantesResult: { [grupoId: number]: string[] } | null = null;
+  private preinscripciones: PreinscripcionResumenDTO[] = [];
+  private gruposMap = new Map<number, GrupoResumenDTO>();
 
+  private periodoActual: number | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -70,25 +68,30 @@ export class HorarioEstudiantesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.horarioState.changes()
-      .pipe(filter((id): id is number => id !== null), takeUntil(this.destroy$))
-      .subscribe(id => this.cargarSolvers(id));
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(id => {
+        if (id === null) { this.periodoActual = null; return; }
+        if (id === this.periodoActual) return;
+        this.periodoActual = id;
+        this.cargarDatos(id);
+      });
   }
 
-  cargarSolvers(periodoId: number): void {
+  cargarDatos(periodoId: number): void {
     this.loading = true;
     this.error = null;
     this.datosListos = false;
     this.limpiarResultados();
 
     forkJoin({
-      docentes: this.horarioService.resolverDocentes(periodoId),
-      estudiantes: this.horarioService.resultadoEstudiantes(periodoId)
+      preinscripciones: this.horarioService.getPreinscripcionesPorPeriodo(periodoId),
+      grupos:           this.horarioService.getGruposPorPeriodo(periodoId)
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ docentes, estudiantes }) => {
-          this.docenteResult = docentes;
-          this.estudiantesResult = estudiantes;
+        next: ({ preinscripciones, grupos }) => {
+          this.preinscripciones = preinscripciones;
+          this.gruposMap = new Map(grupos.map(g => [g.id, g]));
           this.loading = false;
           this.datosListos = true;
         },
@@ -101,47 +104,48 @@ export class HorarioEstudiantesComponent implements OnInit, OnDestroy {
 
   buscar(): void {
     const codigo = this.codigoInput.trim();
-    if (!codigo || !this.docenteResult || !this.estudiantesResult) return;
+    if (!codigo || !this.datosListos) return;
 
     this.codigoBuscado = codigo;
     this.limpiarResultados();
 
-    // Encontrar en qué grupos está el estudiante
-    const gruposDelEstudiante: number[] = Object.entries(this.estudiantesResult)
-      .filter(([, codigos]) => codigos.includes(codigo))
-      .map(([grupoId]) => Number(grupoId));
+    const preinscripcionesEstudiante = this.preinscripciones.filter(
+      p => p.codigoEstudiante === codigo && p.asignado && p.grupo
+    );
 
-    if (gruposDelEstudiante.length === 0) {
+    if (preinscripcionesEstudiante.length === 0) {
       this.estudianteEncontrado = false;
       return;
     }
 
     this.estudianteEncontrado = true;
 
-    // Obtener detalle de cada grupo desde el resultado del solver de docentes
-    const asignaciones: AsignacionItem[] = this.docenteResult.asignaciones
-      .filter(a => gruposDelEstudiante.includes(a.grupoId));
+    this.materias = preinscripcionesEstudiante.map(p => {
+      const grupo = this.gruposMap.get(p.grupo!.id);
+      const docente = grupo?.docente
+        ? `${grupo.docente.nombre} ${grupo.docente.apellido}`
+        : 'Sin docente asignado';
+      return {
+        asignatura:  p.asignatura ?? '—',
+        grupoCodigo: p.grupo!.codigo,
+        docente,
+        franjas:     p.grupo!.horarios ?? []
+      };
+    });
 
-    this.materias = asignaciones.map(a => ({
-      asignatura: a.asignatura ?? '—',
-      grupoCodigo: a.grupoCodigo,
-      docente: a.docente ? `${a.docente.nombre} ${a.docente.apellido}` : 'Sin docente asignado',
-      franjas: a.horarios ?? []
-    }));
-
-    this.buildTimetable(asignaciones);
+    this.buildTimetable(preinscripcionesEstudiante);
   }
 
   onEnter(e: KeyboardEvent): void {
     if (e.key === 'Enter') this.buscar();
   }
 
-  private buildTimetable(asignaciones: AsignacionItem[]): void {
+  private buildTimetable(preinscripciones: PreinscripcionResumenDTO[]): void {
     const slotSet = new Map<string, { horaInicio: string; horaFin: string }>();
     const diasSet = new Set<number>();
 
-    for (const a of asignaciones) {
-      for (const f of a.horarios ?? []) {
+    for (const p of preinscripciones) {
+      for (const f of p.grupo?.horarios ?? []) {
         slotSet.set(`${f.horaInicio}_${f.horaFin}`, { horaInicio: f.horaInicio, horaFin: f.horaFin });
         diasSet.add(f.dia);
       }
@@ -154,13 +158,16 @@ export class HorarioEstudiantesComponent implements OnInit, OnDestroy {
       const celdas: { [dia: number]: CeldaHorario | null } = {};
       this.dias.forEach(d => (celdas[d] = null));
 
-      for (const a of asignaciones) {
-        for (const f of a.horarios ?? []) {
+      for (const p of preinscripciones) {
+        for (const f of p.grupo?.horarios ?? []) {
           if (f.horaInicio === slot.horaInicio && f.horaFin === slot.horaFin) {
+            const grupo = this.gruposMap.get(p.grupo!.id);
             celdas[f.dia] = {
-              asignatura: a.asignatura ?? '—',
-              docente: a.docente ? `${a.docente.nombre} ${a.docente.apellido}` : 'Sin docente',
-              grupoCodigo: a.grupoCodigo
+              asignatura:  p.asignatura ?? '—',
+              docente:     grupo?.docente
+                             ? `${grupo.docente.nombre} ${grupo.docente.apellido}`
+                             : 'Sin docente',
+              grupoCodigo: p.grupo!.codigo
             };
           }
         }

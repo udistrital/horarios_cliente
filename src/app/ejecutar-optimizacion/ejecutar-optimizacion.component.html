@@ -1,0 +1,206 @@
+<!-- Cabecera -->
+<div class="exec-header">
+  <span class="material-icons">play_circle</span>
+  <div>
+    <h2 class="exec-title">Ejecutar Optimización</h2>
+    <p class="exec-desc">
+      Calcula y guarda la asignación de docentes, salones y estudiantes para un período académico.
+      Cada solver puede ejecutarse de forma independiente y en cualquier orden.
+    </p>
+  </div>
+</div>
+
+<!-- Selector de período -->
+<div class="periodo-box">
+  <label class="periodo-box-label">
+    <span class="material-icons">calendar_today</span>
+    Período académico
+  </label>
+  <select
+    class="periodo-box-select"
+    [(ngModel)]="periodoSeleccionado"
+    (change)="onPeriodoCambia()">
+    <option [ngValue]="null" disabled>Seleccione un período...</option>
+    <option *ngFor="let p of periodos" [ngValue]="p.id">
+      {{ p.anio }} – {{ p.semestre }}
+      <ng-container *ngIf="p.activo"> (activo)</ng-container>
+    </option>
+  </select>
+  <p class="periodo-hint" *ngIf="!periodos.length">
+    <span class="material-icons">warning</span>
+    No se pudo cargar la lista de períodos. Verifique que el backend esté corriendo.
+  </p>
+</div>
+
+<!-- Sin período seleccionado -->
+<div *ngIf="!periodoSeleccionado" class="empty-state">
+  <span class="material-icons">tune</span>
+  <p>Seleccione un período académico para ver el estado y ejecutar los solvers.</p>
+</div>
+
+<!-- Cargando estado del período -->
+<div *ngIf="periodoSeleccionado && loadingEstado" class="loading-state">
+  <mat-spinner diameter="36"></mat-spinner>
+  <p>Consultando estado del período...</p>
+</div>
+
+<!-- Tarjetas de solvers -->
+<div class="solvers-grid" *ngIf="periodoSeleccionado && !loadingEstado">
+
+  <!-- ── Solver Docentes ── -->
+  <div class="solver-card">
+    <div class="solver-card-header solver-card-header--docentes">
+      <span class="material-icons">person</span>
+      <h3>Solver Docentes</h3>
+    </div>
+
+    <p class="solver-desc">
+      Asigna un docente a cada grupo según disponibilidades y asignaturas habilitadas.
+      Escribe el resultado en la columna <code>docente_id</code> de cada grupo.
+    </p>
+
+    <!-- Estado actual en BD -->
+    <div class="estado-actual" *ngIf="estadoCargado">
+      <div class="estado-fila">
+        <span class="material-icons estado-icon" [class.ok]="conDocente > 0" [class.neutro]="conDocente === 0">
+          {{ conDocente > 0 ? 'check_circle' : 'radio_button_unchecked' }}
+        </span>
+        <span>{{ conDocente }} / {{ totalGrupos }} grupos con docente asignado</span>
+      </div>
+      <div class="advertencia" *ngIf="conDocente > 0">
+        <span class="material-icons">warning</span>
+        Ya hay docentes asignados — re-ejecutar los sobreescribirá.
+      </div>
+    </div>
+
+    <!-- Resultado tras ejecutar -->
+    <div class="solver-resultado ok" *ngIf="resultadoDocentes">
+      <span class="material-icons">check_circle</span>
+      {{ resultadoDocentes.gruposAsignados }} / {{ resultadoDocentes.totalGrupos }} docentes asignados y guardados.
+      <span *ngIf="resultadoDocentes.gruposSinDocente > 0" class="resultado-warn">
+        ({{ resultadoDocentes.gruposSinDocente }} grupos sin docente disponible)
+      </span>
+    </div>
+
+    <div class="solver-error" *ngIf="errorDocentes">
+      <span class="material-icons">error</span>
+      {{ errorDocentes }}
+    </div>
+
+    <button
+      class="btn-ejecutar"
+      (click)="ejecutarDocentes()"
+      [disabled]="loadingDocentes || loadingSalones || loadingEstudiantes">
+      <mat-spinner *ngIf="loadingDocentes" diameter="18" class="spinner-btn"></mat-spinner>
+      <span class="material-icons" *ngIf="!loadingDocentes">play_arrow</span>
+      {{ loadingDocentes ? 'Ejecutando...' : 'Ejecutar solver docentes' }}
+    </button>
+  </div>
+
+  <!-- ── Solver Salones ── -->
+  <div class="solver-card">
+    <div class="solver-card-header solver-card-header--salones">
+      <span class="material-icons">meeting_room</span>
+      <h3>Solver Salones</h3>
+    </div>
+
+    <p class="solver-desc">
+      Asigna un espacio físico a cada grupo respetando capacidad y franjas horarias.
+      Escribe el resultado en la columna <code>salon_id</code> de cada grupo y horario.
+    </p>
+
+    <div class="estado-actual" *ngIf="estadoCargado">
+      <div class="estado-fila">
+        <span class="material-icons estado-icon" [class.ok]="conSalon > 0" [class.neutro]="conSalon === 0">
+          {{ conSalon > 0 ? 'check_circle' : 'radio_button_unchecked' }}
+        </span>
+        <span>{{ conSalon }} / {{ totalGrupos }} grupos con salón asignado</span>
+      </div>
+      <div class="advertencia" *ngIf="conSalon > 0">
+        <span class="material-icons">warning</span>
+        Ya hay salones asignados — re-ejecutar los sobreescribirá.
+      </div>
+    </div>
+
+    <div class="solver-resultado ok" *ngIf="resultadoSalones">
+      <span class="material-icons">check_circle</span>
+      {{ resultadoSalones.gruposAsignados }} / {{ resultadoSalones.totalGrupos }} salones asignados y guardados.
+      <span *ngIf="resultadoSalones.gruposSinSalon > 0" class="resultado-warn">
+        ({{ resultadoSalones.gruposSinSalon }} grupos sin salón disponible)
+      </span>
+    </div>
+
+    <div class="solver-error" *ngIf="errorSalones">
+      <span class="material-icons">error</span>
+      {{ errorSalones }}
+    </div>
+
+    <button
+      class="btn-ejecutar"
+      (click)="ejecutarSalones()"
+      [disabled]="loadingDocentes || loadingSalones || loadingEstudiantes">
+      <mat-spinner *ngIf="loadingSalones" diameter="18" class="spinner-btn"></mat-spinner>
+      <span class="material-icons" *ngIf="!loadingSalones">play_arrow</span>
+      {{ loadingSalones ? 'Ejecutando...' : 'Ejecutar solver salones' }}
+    </button>
+  </div>
+
+  <!-- ── Solver Estudiantes ── -->
+  <div class="solver-card">
+    <div class="solver-card-header solver-card-header--estudiantes">
+      <span class="material-icons">school</span>
+      <h3>Solver Estudiantes</h3>
+    </div>
+
+    <p class="solver-desc">
+      Asigna cada preinscripción de estudiante a un grupo disponible.
+      Escribe el resultado en la columna <code>grupo_id</code> de cada preinscripción.
+    </p>
+
+    <div class="estado-actual" *ngIf="estadoCargado">
+      <div class="estado-fila">
+        <span class="material-icons estado-icon" [class.ok]="conGrupo > 0" [class.neutro]="conGrupo === 0">
+          {{ conGrupo > 0 ? 'check_circle' : 'radio_button_unchecked' }}
+        </span>
+        <span>{{ conGrupo }} / {{ totalPreins }} preinscripciones con grupo asignado</span>
+      </div>
+      <div class="advertencia" *ngIf="conGrupo > 0">
+        <span class="material-icons">warning</span>
+        Ya hay estudiantes asignados — re-ejecutar los sobreescribirá.
+      </div>
+    </div>
+
+    <div class="solver-resultado ok" *ngIf="resultadoEstudiantes">
+      <span class="material-icons">check_circle</span>
+      {{ resultadoEstudiantes.asignadas }} / {{ resultadoEstudiantes.totalPreinscripciones }} estudiantes asignados y guardados.
+      <span *ngIf="resultadoEstudiantes.sinGrupo > 0" class="resultado-warn">
+        ({{ resultadoEstudiantes.sinGrupo }} sin grupo disponible)
+      </span>
+    </div>
+
+    <div class="solver-error" *ngIf="errorEstudiantes">
+      <span class="material-icons">error</span>
+      {{ errorEstudiantes }}
+    </div>
+
+    <button
+      class="btn-ejecutar"
+      (click)="ejecutarEstudiantes()"
+      [disabled]="loadingDocentes || loadingSalones || loadingEstudiantes">
+      <mat-spinner *ngIf="loadingEstudiantes" diameter="18" class="spinner-btn"></mat-spinner>
+      <span class="material-icons" *ngIf="!loadingEstudiantes">play_arrow</span>
+      {{ loadingEstudiantes ? 'Ejecutando...' : 'Ejecutar solver estudiantes' }}
+    </button>
+  </div>
+
+</div>
+
+<!-- Nota informativa -->
+<div class="nota-info" *ngIf="periodoSeleccionado">
+  <span class="material-icons">info</span>
+  <p>
+    Los tres solvers son independientes y pueden ejecutarse en cualquier orden.
+    Cada solver solo modifica su propia columna en la BD y no interfiere con los demás.
+    Los resultados quedan guardados y las vistas de consulta los mostrarán inmediatamente.
+  </p>
+</div>

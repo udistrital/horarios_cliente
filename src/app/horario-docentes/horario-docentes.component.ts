@@ -7,7 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, takeUntil } from 'rxjs';
 import { HorarioService } from '../services/horario.service';
 import { HorarioStateService } from '../services/horario-state.service';
-import { DocenteAsignacionResult, AsignacionItem, FranjaDTO } from '../models/docente-asignacion.model';
+import { GrupoResumenDTO, FranjaDTO } from '../models/grupo-resumen.model';
 
 interface CeldaDocente {
   asignatura: string;
@@ -28,7 +28,7 @@ interface FilaDocenteTimetable {
   styleUrl: './horario-docentes.component.scss',
 })
 export class HorarioDocentesComponent implements OnInit, OnDestroy {
-  result: DocenteAsignacionResult | null = null;
+  grupos: GrupoResumenDTO[] = [];
   loading = false;
   error: string | null = null;
 
@@ -49,6 +49,10 @@ export class HorarioDocentesComponent implements OnInit, OnDestroy {
   readonly DIAS_NOMBRE: Record<number, string> = {
     1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado', 7: 'Domingo'
   };
+
+  get totalGrupos()     { return this.grupos.length; }
+  get gruposAsignados() { return this.grupos.filter(g => g.docente).length; }
+  get gruposSinDocente(){ return this.grupos.filter(g => !g.docente).length; }
 
   private periodoActual: number | null = null;
   private destroy$ = new Subject<void>();
@@ -72,12 +76,12 @@ export class HorarioDocentesComponent implements OnInit, OnDestroy {
   cargar(periodoId: number): void {
     this.loading = true;
     this.error = null;
-    this.result = null;
+    this.grupos = [];
     this.docenteSeleccionado = null;
-    this.horarioService.resolverDocentes(periodoId)
+    this.horarioService.getGruposPorPeriodo(periodoId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: r => { this.result = r; this.loading = false; },
+        next: r => { this.grupos = r; this.loading = false; },
         error: () => {
           this.error = 'No se pudo conectar con el backend. Verifique que el servidor esté corriendo en localhost:8081.';
           this.loading = false;
@@ -85,34 +89,37 @@ export class HorarioDocentesComponent implements OnInit, OnDestroy {
       });
   }
 
-  get asignacionesFiltradas(): AsignacionItem[] {
+  get asignacionesFiltradas(): GrupoResumenDTO[] {
     const q = this.filtroBusqueda.toLowerCase().trim();
-    return (this.result?.asignaciones ?? []).filter(a => {
+    return this.grupos.filter(g => {
       const matchBusqueda = !q ||
-        this.docenteNombre(a).toLowerCase().includes(q) ||
-        (a.asignatura ?? '').toLowerCase().includes(q) ||
-        a.grupoCodigo.toLowerCase().includes(q);
-      const matchSin = !this.soloSinDocente || !a.asignado;
+        this.docenteNombre(g).toLowerCase().includes(q) ||
+        (g.asignatura ?? '').toLowerCase().includes(q) ||
+        g.codigo.toLowerCase().includes(q);
+      const matchSin = !this.soloSinDocente || !g.docente;
       return matchBusqueda && matchSin;
     });
   }
 
-  verHorarioDocente(item: AsignacionItem): void {
+  verHorarioDocente(item: GrupoResumenDTO): void {
     if (!item.docente) return;
     if (this.docenteSeleccionado?.id === item.docente.id) {
       this.docenteSeleccionado = null;
       return;
     }
-    const grupos = this.result!.asignaciones.filter(a => a.docente?.id === item.docente!.id);
-    this.docenteSeleccionado = { id: item.docente.id, nombre: `${item.docente.nombre} ${item.docente.apellido}` };
-    this.buildDocenteTimetable(grupos);
+    const gruposDocente = this.grupos.filter(g => g.docente?.id === item.docente!.id);
+    this.docenteSeleccionado = {
+      id: item.docente.id,
+      nombre: `${item.docente.nombre} ${item.docente.apellido}`
+    };
+    this.buildDocenteTimetable(gruposDocente);
   }
 
-  private buildDocenteTimetable(asignaciones: AsignacionItem[]): void {
+  private buildDocenteTimetable(grupos: GrupoResumenDTO[]): void {
     const slotSet = new Map<string, { horaInicio: string; horaFin: string }>();
     const diasSet = new Set<number>();
-    for (const a of asignaciones) {
-      for (const f of a.horarios ?? []) {
+    for (const g of grupos) {
+      for (const f of g.horarios ?? []) {
         slotSet.set(`${f.horaInicio}_${f.horaFin}`, { horaInicio: f.horaInicio, horaFin: f.horaFin });
         diasSet.add(f.dia);
       }
@@ -122,10 +129,10 @@ export class HorarioDocentesComponent implements OnInit, OnDestroy {
     this.filasDocenteTimetable = slots.map(slot => {
       const celdas: { [dia: number]: CeldaDocente | null } = {};
       this.diasDocenteTimetable.forEach(d => (celdas[d] = null));
-      for (const a of asignaciones) {
-        for (const f of a.horarios ?? []) {
+      for (const g of grupos) {
+        for (const f of g.horarios ?? []) {
           if (f.horaInicio === slot.horaInicio && f.horaFin === slot.horaFin) {
-            celdas[f.dia] = { asignatura: a.asignatura ?? '—', grupoCodigo: a.grupoCodigo };
+            celdas[f.dia] = { asignatura: g.asignatura ?? '—', grupoCodigo: g.codigo };
           }
         }
       }
@@ -137,7 +144,7 @@ export class HorarioDocentesComponent implements OnInit, OnDestroy {
     return `${this.DIAS[f.dia] ?? 'D' + f.dia} ${f.horaInicio}–${f.horaFin}`;
   }
 
-  docenteNombre(item: AsignacionItem): string {
+  docenteNombre(item: GrupoResumenDTO): string {
     if (!item.docente) return 'Sin asignar';
     return `${item.docente.nombre} ${item.docente.apellido}`;
   }
