@@ -13,6 +13,10 @@ export class HorarioStateService {
     this.periodoId$.next(id);
   }
 
+  reset(): void {
+    this.periodoId$.next(null);
+  }
+
   changes(): Observable<number | null> {
     return this.periodoId$.asObservable();
   }

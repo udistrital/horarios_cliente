@@ -14,7 +14,13 @@ if (environment.production) {
 const lifecycles = singleSpaAngular({
   bootstrapFunction: singleSpaProps => {
     singleSpaPropsSubject.next(singleSpaProps);
-    return bootstrapApplication(AppComponent, appConfig);
+    return bootstrapApplication(AppComponent, {
+      ...appConfig,
+      providers: [
+        ...appConfig.providers,
+        ...getSingleSpaExtraProviders(),
+      ],
+    });
   },
   template: '<app-root />',
   Router,
