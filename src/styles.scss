@@ -1,18 +1,20 @@
 @use '@angular/material' as mat;
 
-@include mat.core();
-
-$primary: mat.define-palette(mat.$indigo-palette);
-$accent:  mat.define-palette(mat.$amber-palette, A200, A100, A400);
-$warn:    mat.define-palette(mat.$red-palette);
-
-$theme: mat.define-light-theme((
-  color: (primary: $primary, accent: $accent, warn: $warn),
-  typography: mat.define-typography-config(),
-  density: 0,
-));
-
-@include mat.all-component-themes($theme);
+// Theming Material 3 (API nueva desde Angular Material 18+).
+// El azul institucional (#00599d) se aplica directamente en los SCSS de cada
+// componente; aquí solo se define el tema base de los componentes de Material.
+html {
+  color-scheme: light;
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$azure-palette,
+      tertiary: mat.$blue-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
 
 html, body {
   height: 100%;
