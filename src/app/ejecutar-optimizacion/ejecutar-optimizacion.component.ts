@@ -4,14 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
 import { HorarioService } from '../services/horario.service';
+import { SolverEstadoService } from '../services/solver-estado.service';
 import { PeriodoAcademico } from '../models/periodo-academico.model';
 import { GrupoResumenDTO } from '../models/grupo-resumen.model';
 import { PreinscripcionResumenDTO } from '../models/preinscripcion-resumen.model';
 import { DocenteAsignacionResult } from '../models/docente-asignacion.model';
 import { SalonAsignacionResult } from '../models/salon-asignacion.model';
 import { EstudianteAsignacionResult } from '../models/estudiante-asignacion.model';
-
-type SolverFase = 'idle' | 'calculando' | 'preview' | 'guardando' | 'guardado' | 'error';
 
 @Component({
   selector: 'app-ejecutar-optimizacion',
@@ -24,30 +23,43 @@ export class EjecutarOptimizacionComponent implements OnInit, OnDestroy {
   periodos: PeriodoAcademico[] = [];
   periodoSeleccionado: number | null = null;
 
-  // Estado actual del período en BD
+  // Estado actual del período en BD (se recarga al volver al componente)
   loadingEstado = false;
   gruposActuales: GrupoResumenDTO[] = [];
   preinscripcionesActuales: PreinscripcionResumenDTO[] = [];
   estadoCargado = false;
 
-  get totalGrupos()  { return this.gruposActuales.length; }
-  get conDocente()   { return this.gruposActuales.filter(g => g.docente).length; }
-  get conSalon()     { return this.gruposActuales.filter(g => g.salon).length; }
-  get totalPreins()  { return this.preinscripcionesActuales.length; }
-  get conGrupo()     { return this.preinscripcionesActuales.filter(p => p.asignado).length; }
+  get totalGrupos() { return this.gruposActuales.length; }
+  get conDocente()  { return this.gruposActuales.filter(g => g.docente).length; }
+  get conSalon()    { return this.gruposActuales.filter(g => g.salon).length; }
+  get totalPreins() { return this.preinscripcionesActuales.length; }
+  get conGrupo()    { return this.preinscripcionesActuales.filter(p => p.asignado).length; }
 
-  // Fase y preview por solver
-  faseDocentes:    SolverFase = 'idle';
-  faseSalones:     SolverFase = 'idle';
-  faseEstudiantes: SolverFase = 'idle';
+  // ── Estado de los solvers delegado al servicio singleton ──────────────────
+  // Persiste aunque el componente sea destruido al cambiar de pestaña.
 
-  previewDocentes:    DocenteAsignacionResult | null = null;
-  previewSalones:     SalonAsignacionResult   | null = null;
-  previewEstudiantes: EstudianteAsignacionResult | null = null;
+  get faseDocentes()       { return this.se.faseDocentes; }
+  set faseDocentes(v)      { this.se.faseDocentes = v; }
+  get faseSalones()        { return this.se.faseSalones; }
+  set faseSalones(v)       { this.se.faseSalones = v; }
+  get faseEstudiantes()    { return this.se.faseEstudiantes; }
+  set faseEstudiantes(v)   { this.se.faseEstudiantes = v; }
 
-  errorDocentes:    string | null = null;
-  errorSalones:     string | null = null;
-  errorEstudiantes: string | null = null;
+  get previewDocentes()    { return this.se.previewDocentes; }
+  set previewDocentes(v)   { this.se.previewDocentes = v; }
+  get previewSalones()     { return this.se.previewSalones; }
+  set previewSalones(v)    { this.se.previewSalones = v; }
+  get previewEstudiantes() { return this.se.previewEstudiantes; }
+  set previewEstudiantes(v){ this.se.previewEstudiantes = v; }
+
+  get errorDocentes()      { return this.se.errorDocentes; }
+  set errorDocentes(v)     { this.se.errorDocentes = v; }
+  get errorSalones()       { return this.se.errorSalones; }
+  set errorSalones(v)      { this.se.errorSalones = v; }
+  get errorEstudiantes()   { return this.se.errorEstudiantes; }
+  set errorEstudiantes(v)  { this.se.errorEstudiantes = v; }
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   get hayPreviewListo(): boolean {
     return this.faseDocentes === 'preview' || this.faseSalones === 'preview' || this.faseEstudiantes === 'preview';
@@ -63,9 +75,15 @@ export class EjecutarOptimizacionComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
 
-  constructor(private horarioService: HorarioService) {}
+  constructor(private horarioService: HorarioService, private se: SolverEstadoService) {}
 
   ngOnInit(): void {
+    // Restaurar el período y el estado de solvers del servicio
+    this.periodoSeleccionado = this.se.periodoId;
+    if (this.periodoSeleccionado) {
+      this.cargarEstado();
+    }
+
     this.horarioService.getPeriodos()
       .pipe(takeUntil(this.destroy$))
       .subscribe({ next: ps => { this.periodos = ps; }, error: () => {} });
@@ -73,14 +91,12 @@ export class EjecutarOptimizacionComponent implements OnInit, OnDestroy {
 
   onPeriodoCambia(): void {
     if (!this.periodoSeleccionado) return;
-    this.resetSolvers();
+    if (this.periodoSeleccionado !== this.se.periodoId) {
+      // Cambiaron de período — el estado anterior no aplica
+      this.se.resetSolvers();
+    }
+    this.se.periodoId = this.periodoSeleccionado;
     this.cargarEstado();
-  }
-
-  private resetSolvers(): void {
-    this.faseDocentes = this.faseSalones = this.faseEstudiantes = 'idle';
-    this.previewDocentes = this.previewSalones = this.previewEstudiantes = null;
-    this.errorDocentes = this.errorSalones = this.errorEstudiantes = null;
   }
 
   cargarEstado(): void {

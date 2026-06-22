@@ -21,7 +21,7 @@
             "outputPath": "dist",
             "index": "src/index.html",
             "main": "src/main.single-spa.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
